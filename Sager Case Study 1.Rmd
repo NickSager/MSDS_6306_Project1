@@ -26,6 +26,7 @@ breweries <- read.csv("Data/Breweries.csv")
 summary(is.na(beers))
 summary(is.na(breweries))
 
+#Investigate the missing values by style of beer
 beers %>%
     group_by(Style) %>%
     summarize_all(~ sum(is.na(.))) %>%
@@ -112,11 +113,12 @@ beers_clean %>%
 
 4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
 ```{r}
-beers_breweries %>%
+beers_medians <-
+    beers_breweries %>%
     group_by(State) %>%
     summarize(median_ABV = median(ABV, na.rm = TRUE), median_IBU = median(IBU, na.rm = TRUE)) %>%
-    arrange(desc(median_ABV)) -> beers_medians
-    
+    arrange(desc(median_ABV))
+
 beers_medians %>%
     ggplot(aes(x = State, y = median_ABV)) +
     geom_bar(stat = "identity", fill = "cornflowerblue") +
@@ -129,12 +131,56 @@ print(beers_medians)
 
 5. Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 ```{r}
-#Doesn't work
 beers_breweries %>%
-    filter(ABV == max(ABV, na.rm = TRUE)) %>% 
-    select(State, Beer_Name, ABV)
+    filter(ABV == max(beers_breweries$ABV, na.rm = TRUE)) %>%
+    select(State, Beer_Name, ABV, Brewery)
 
-#Less elegant, but works
+beers_breweries %>%
+    filter(IBU == max(beers_breweries$IBU, na.rm = TRUE)) %>%
+    select(State, Beer_Name, IBU, Brewery)
+
+#Less elegant, but also works
 max_value <- max(beers_breweries$ABV, na.rm = TRUE)
 beers_breweries[which(beers_breweries$ABV == max_value), c("State", "Beer_Name", "ABV", "Brewery")]
+```
+
+6. Comment on the summary statistics and distribution of the ABV variable.
+```{r}
+summary(beers_breweries$ABV, na.rm = TRUE)
+
+beers_breweries %>% 
+  group_by(Style) %>% 
+  summarize(
+    count = n(),
+    mean = mean(ABV, na.rm = TRUE),
+    sd = sd(ABV, na.rm = TRUE),
+    min = min(ABV, na.rm = TRUE),
+    median = median(ABV, na.rm = TRUE),
+    max = max(ABV, na.rm = TRUE)
+  )
+```
+Add comments here
+
+7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+```{r}
+beers_breweries %>%
+    ggplot(aes(x = ABV, y = IBU, color = Style)) +
+    geom_point(show.legend = FALSE) +
+    geom_smooth(method = "lm", se = FALSE, color = "black") +
+    labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") +
+    theme_minimal()
+```
+Explanation here
+
+8. Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
+In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged. 
+```{r}
+#Filter the data into a training set containing only (IPA or Ale)
+
+#Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
+
+#Use KNN to classify the beers into IPAs and Ales using ABV and IBU as the predictors
+
+#Print the confusion matrix and calculate the accuracy of the model
+
 ```
