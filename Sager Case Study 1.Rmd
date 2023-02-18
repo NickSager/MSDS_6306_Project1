@@ -1,0 +1,58 @@
+---
+title: "Case Study 1 - Beers"
+author: "Nicholas Sager"
+date: "2/17/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Case Study 1 - Beers
+
+## Introduction
+
+Write an introduction.. The data set used is the Beers data set. The data set contains information on 2410 different beers from 558 different breweries in 50 different states. The data set contains information on the name of the beer, the name of the brewery, the state where the brewery is located, the alcohol by volume (ABV) of the beer, the International Bitterness Units (IBU) of the beer, and the syle of the beer.
+
+## Read the Data
+```{r}
+library(tidyverse)
+
+beers <- read.csv("Data/Beers.csv")
+breweries <- read.csv("Data/Breweries.csv")
+
+summary(is.na(beers))
+summary(is.na(breweries))
+
+beers %>%
+    group_by(Style) %>%
+    summarize_all(~ sum(is.na(.))) %>%
+    arrange(desc(IBU))
+```
+
+## Data Wrangling
+```{r}
+#Impute the values for the missing IBU values with the mean IBU value for the style of beer
+beers_clean <- beers %>%
+    group_by(Style) %>%
+    mutate(IBU = ifelse(is.na(IBU), mean(IBU, na.rm = TRUE), IBU))
+
+# Print the beers which have a NA value for the ABV
+beers_clean %>%
+    filter(is.na(ABV)) %>%
+    group_by(Style) %>%
+    summarize(count = n()) %>%
+    arrange(desc(count))
+# Need to decide what to do with these. moving on for now.
+
+# Merge the beers and breweries data sets
+str(as.factor(beers$Brewery_id))
+str(as.factor(breweries$Brew_ID))
+beers_breweries <- left_join(beers_clean, breweries, by = c("Brewery_id" = "Brew_ID")) %>%
+    rename(Beer_Name = Name.x, Brewery = Name.y)
+
+head(beers_breweries)
+```
+
+##
