@@ -143,6 +143,9 @@ beers_clean %>%
     arrange(desc(count))
 # Need to decide what to do with these. moving on for now.
 
+# Some Beers don't have a style, will work on this later
+beers_clean %>% filter(Style == "")
+
 ```
 
 4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
@@ -157,7 +160,7 @@ beers_medians %>%
     ggplot(aes(x = State, y = median_ABV)) +
     geom_bar(stat = "identity", fill = "cornflowerblue") +
     labs(x = "State", y = "Median Alcohol Content", title = "Median Alcohol Content in Each State") +
-    theme_economist() +
+    theme_economist_white() +
     theme(axis.text.x = element_text(angle = 70, hjust = 0))
 
 print(beers_medians)
@@ -204,17 +207,41 @@ beers_breweries %>%
     labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") +
     theme_minimal()
 ```
-Explanation here
+ There appears to be a linear relationship between alcohol content (ABV) and bitterness (IBU). Note that the gold colored dots above the line are mostly Ales, meaning that they have higher bitterness compared to their ABV. The blue and pink dots below the line are mostly lagers, pilsners, and other light beers. These tend to be less bitter for a given ABV.
 
 8. Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
 In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged. 
 ```{r}
+library(caret)
+library(e1071)
+library(class)
+# Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
+beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = TRUE), "IPA",
+                        ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other"))
+
 #Filter the data into a training set containing only (IPA or Ale)
+ales <- beers_breweries %>%
+    filter(Ale == "IPA" | Ale == "Ale")
 
-#Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
+# Use KNN to classify the beers into IPAs and Ales using ABV and IBU as the predictors
+# The entire dataset is used to train the model, including "Other" beers
+classifications = knn.cv(na.omit(beers_breweries)[, c("ABV", "IBU")], na.omit(beers_breweries)$Ale, k = 5)
+confusionMatrix(table(classifications, na.omit(beers_breweries)$Ale))
 
-#Use KNN to classify the beers into IPAs and Ales using ABV and IBU as the predictors
+# KNN done with only Ales
+classifications = knn.cv(na.omit(ales)[, c("ABV", "IBU")], na.omit(ales)$Ale, k = 5)
+confusionMatrix(table(classifications, na.omit(ales)$Ale))
+```
+The KNN model using only Ales (IPAs and other Ales) has more than a 90% accuracy rate. For identifying an Ale, the sensitivity of the model is 92.5% and the specificity is 87.8%. Practically, this means that ABV and IBU can determine whether a given Ale is an IPA or not almost all of the time. 
 
-#Print the confusion matrix and calculate the accuracy of the model
+Furthermore, the KNN model using the entire dataset of beers has a 74% accuracy rate. The whole dataset includes many other types of beers but the model still performs quite well. This suggests that both ales and IPAs have a distinct profile of alcohol content and bitterness compared to any other type of beer. 
 
+The following chart shows the difference of ABV and IBU between IPAs and Ales. IPAs tend to have distinctly higher ABV and IBU than Ales, which explains the unusually high accuracy of the KNN model. 
+```{r}
+ales %>%
+    ggplot(aes(x = ABV, y = IBU, color = Ale)) +
+    geom_point(show.legend = FALSE) +
+    geom_smooth(aes(color = Ale), method = "lm", se = FALSE) +
+    labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") +
+    theme_minimal()
 ```
