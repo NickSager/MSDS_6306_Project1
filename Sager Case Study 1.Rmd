@@ -69,7 +69,11 @@ beers_breweries %>%
     group_by(State) %>%
     summarize(count = n_distinct(Brewery_id)) %>%
     arrange(desc(count))
-#Need to figure out why those are different
+#Need to figure out why those are different. 
+#Found duplicate for Colorado
+#      Brewery            Brewery_id
+# Oskar Blues Brewery        167
+# Oskar Blues Brewery        504
 
 # Plot the number of breweries in each state
 beers_breweries %>%
