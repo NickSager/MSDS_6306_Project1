@@ -32,8 +32,8 @@ beers_breweries <- left_join(beers, breweries, by = c("Brewery_id" = "Brew_ID"))
     rename(Beer_Name = Name.x, Brewery = Name.y)
 
 # Verify data frame
-head(beers_breweries, 6)
-tail(beers_breweries, 6)
+head(beers_breweries)
+str(beers_breweries)
 
 # Noticed extra spaces in State abbr
 beers_breweries$State <- str_replace_all(beers_breweries$State," ","")
@@ -97,10 +97,10 @@ ggplot(Brewery_Stat, aes(x = reorder(State, -count), y = count)) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # Heatmap of with the count over US map
-df <- merge(statepop,Brewery_Stat, by = c("abbr"= "State"))
-df <- left_join(statepop, Brewery_Stat, by = c("abbr"= "State"))
+state_fips <- statepop %>% select(fips, abbr) # get fips values for heatmap plot
+Brewery_Stat <- left_join(Brewery_Stat, state_fips, by = c("State"= "abbr"))
 
-plot_usmap(data = df, values = "count") + 
+plot_usmap(data = Brewery_Stat, values = "count") + 
   labs(title = "Heat Map of Breweries in Each State") + 
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
   scale_fill_gradient('count',  low = "lightblue", high = "red")
@@ -124,24 +124,30 @@ tail(beers_breweries, 6)
 #Investigate the missing values
 sapply(beers_breweries, function(x) sum(is.na(x)))
 
-# Missing style of beer
-beers %>%
+# writing missing ABV values to csv file
+missing_ABV <- beers_breweries %>% select(Beer_ID,Beer_Name,ABV,IBU,Brewery) %>%
+    filter(is.na(ABV))
+write.csv(missing_ABV, file.choose(), row.names=TRUE) # Create CSV to fill out
+missing_ABV <- read.csv(file.choose(), header = TRUE) # Read in filled CSV
+
+missing_ABV <- missing_ABV %>% select(Beer_ID,ABV,IBU)
+beers_breweries <- left_join(beers_breweries, missing_ABV, by = c("Beer_ID")) %>%
+      rename(ABV = ABV.x, IBU = IBU.x)
+
+beers_breweries <- beers_breweries %>% mutate(ABV = ifelse(is.na(ABV), ABV.y, ABV ), ABV) #bring over new ABV's
+beers_breweries <- beers_breweries %>% mutate(IBU = ifelse(is.na(IBU), IBU.y, IBU ), IBU) # bring over new IBUs
+
+# Missing IBU values grouped by style of beer
+beers_breweries %>%
     group_by(Style) %>%
     summarize_all(~ sum(is.na(.))) %>%
-    arrange(desc(IBU))
+    arrange(desc(IBU)) %>% print()
 
 #Impute the values for the missing IBU values with the mean IBU value for the style of beer
-beers_clean <- beers %>%
+beers_breweries <- beers_breweries %>%
     group_by(Style) %>%
     mutate(IBU = ifelse(is.na(IBU), mean(IBU, na.rm = TRUE), IBU))
-
-# Print the beers which have a NA value for the ABV
-beers_clean %>%
-    filter(is.na(ABV)) %>%
-    group_by(Style) %>%
-    summarize(count = n()) %>%
-    arrange(desc(count))
-# Need to decide what to do with these. moving on for now.
+## Note - Still have 52 missing IBUs after this method of handling the NAs, 
 
 ```
 
@@ -150,7 +156,8 @@ beers_clean %>%
 beers_medians <-
     beers_breweries %>%
     group_by(State) %>%
-    summarize(median_ABV = median(ABV, na.rm = TRUE), median_IBU = median(IBU, na.rm = TRUE)) %>%
+    summarize(median_ABV = median(ABV, na.rm = TRUE), 
+              median_IBU = median(IBU, na.rm = TRUE)) %>%
     arrange(desc(median_ABV))
 
 beers_medians %>%
