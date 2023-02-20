@@ -13,9 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Write an introduction.. The data set used is the Beers data set. The data set contains information on 2410 different beers from 558 different breweries in 50 different states. The data set contains information on the name of the beer, the name of the brewery, the state where the brewery is located, the alcohol by volume (ABV) of the beer, the International Bitterness Units (IBU) of the beer, and the syle of the beer.
+This case study is conducted to analyze data on a wide variety of American beers for Budweiser. It is our intention that the results provide an overall picture of the domestic beer market and help inform Budweiser's efforts in their future beer endeavors. The data set contains information on 2410 different beers from 558 different breweries in 50 different states.  It also contains information on the name of the beer, the name of the brewery, the state where the brewery is located, the alcohol by volume (ABV) of the beer, the International Bitterness Units (IBU) of the beer, and the syle of the beer. We will predominately be focusing on the ABV and IBU of the beer, as well as the style of the beer.
 
 ## Read the Data
+
+First, we will read in the beers data, and merge the breweries data so that each beer has brewery data associated with it. Then we will view a few row to make sure it looks ok. 
 ```{r}
 library(tidyverse)
 library(ggthemes)
@@ -34,13 +36,12 @@ beers_breweries <- left_join(beers, breweries, by = c("Brewery_id" = "Brew_ID"))
 # Verify data frame
 head(beers_breweries)
 str(beers_breweries)
-
-# Noticed extra spaces in State abbr
-beers_breweries$State <- str_replace_all(beers_breweries$State," ","")
-
 ```
+This looks like data we can work with. 
 
 ## Data Exploration
+Next, we will start exploring the data for insights into the American beer market.
+
 1. How many breweries are present in each state?
 ```{r}
 beers_breweries %>%
@@ -55,7 +56,11 @@ beers_breweries %>%
 #Need to figure out why those are different. 
 #Check that the number of breweries match the number of brewery ids
 n_distinct(beers_breweries$Brewery) == n_distinct(beers_breweries$Brewery_id)
+```
+Here, we can see that there are 558 brewery ids in the data set, but only 551 unique brewery names. This means that there are some breweries with multiple ids. We will need to investigate this further. 
 
+The following code searches for brewery names that are in the data set more than once and combines their brewery id number.
+```{r}
 #View abnormalities between Brewery Name and Brewery ID
 unique(beers_breweries[c("Brewery", "Brewery_id")]) %>% 
   group_by(Brewery) %>% 
@@ -78,11 +83,18 @@ for (name in beers_breweries$Brewery) {
 }
 #Re-check that the number of breweries match the number of brewery ids
 n_distinct(beers_breweries$Brewery) == n_distinct(beers_breweries$Brewery_id)
+```
+It's a small change, but will make any analysis we do of state or brewery aggregates more accurate.
 
+Now we can address the question at hand: how many breweries are in each state?
+```{r}
 # Plot the number of breweries in each state
 library(usmap)
 library(ggplot2)
 library(ggthemes)
+
+# Noticed extra spaces in State abbr
+beers_breweries$State <- str_replace_all(beers_breweries$State," ","")
 
 # Setup Stat for graphs
 Brewery_Stat = beers_breweries %>%
@@ -95,7 +107,10 @@ ggplot(Brewery_Stat, aes(x = reorder(State, -count), y = count)) +
     geom_bar(stat = "identity") +
     labs(x = "State", y = "Number of Breweries", title = "Number of Breweries in Each State") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
 
+Here is a heat map of the amount of breweries per state.
+```{r}
 # Heatmap of with the count over US map
 state_fips <- statepop %>% select(fips, abbr) # get fips values for heatmap plot
 Brewery_Stat <- left_join(Brewery_Stat, state_fips, by = c("State"= "abbr"))
@@ -107,28 +122,38 @@ plot_usmap(data = Brewery_Stat, values = "count") +
 
 ```
 
-2. Merge the datasets and print the first 6 and last 6.
-```{r}
-# Duplicated from Wrangling section. Included here for completeness
-# str(as.factor(beers$Brewery_id))
-# str(as.factor(breweries$Brew_ID))
-# beers_breweries <- left_join(beers_clean, breweries, by = c("Brewery_id" = "Brew_ID")) %>%
-#    rename(Beer_Name = Name.x, Brewery = Name.y)
+Colorado has the most breweries of any state. Visually, the west coast, the midwest, Colorado, and Texas have the highest amount of breweries. This may reflect the popularity of beer in those regions which could be significant for marketing efforts.
 
+
+2. Merge the datasets and print the first 6 and last 6.
+
+The data sets have been merged using the following R code:
+```
+  beers_breweries <- left_join(beers, breweries, by = c("Brewery_id" = "Brew_ID")) %>%
+    rename(Beer_Name = Name.x, Brewery = Name.y)
+```
+Here is a sample of the data to verify that the merge was successful:
+```{r}
 head(beers_breweries, 6)
 tail(beers_breweries, 6)
 ```
 
 3. Address the missing values in each column.
+
+There are some missing data in the beers dataset. We will need to address these before we can do any analysis. 
 ```{r}
 #Investigate the missing values
 sapply(beers_breweries, function(x) sum(is.na(x)))
+```
+There are 62 missing ABV values, 1005, missing IBU values, and 5 missing beer Style values, which are not reflected in the output above.
 
+There are few enoug missing ABV values to be filled in manually using the following code. Values were obtained from websites like BeerAdvocate and Untappd.
+```{r}
 # writing missing ABV values to csv file
 missing_ABV <- beers_breweries %>% select(Beer_ID,Beer_Name,ABV,IBU,Brewery) %>%
     filter(is.na(ABV))
-write.csv(missing_ABV, file.choose(), row.names=TRUE) # Create CSV to fill out
-missing_ABV <- read.csv(file.choose(), header = TRUE) # Read in filled CSV
+write.csv(missing_ABV, "Data/missingABV.csv", row.names=TRUE) # Create CSV to fill out
+missing_ABV <- read.csv("Data/missingABV_filled.csv", header = TRUE) # Read in filled CSV
 
 missing_ABV <- missing_ABV %>% select(Beer_ID,ABV,IBU)
 beers_breweries <- left_join(beers_breweries, missing_ABV, by = c("Beer_ID")) %>%
@@ -136,7 +161,10 @@ beers_breweries <- left_join(beers_breweries, missing_ABV, by = c("Beer_ID")) %>
 
 beers_breweries <- beers_breweries %>% mutate(ABV = ifelse(is.na(ABV), ABV.y, ABV ), ABV) #bring over new ABV's
 beers_breweries <- beers_breweries %>% mutate(IBU = ifelse(is.na(IBU), IBU.y, IBU ), IBU) # bring over new IBUs
+```
 
+The remaining missing values will be imputed using the mean ABV and IBU values for the style of beer. American IPA's have the highest number of missing IBU values but, as we will see later, the have a unique range of IBU values, so the imputation should be accurate. The same applies to the other Ales that make up the bulk of the missing data. Because our analysis is concerned with Ales, more effort could be put into finding these missing values if more time or money becomes available and a more accurate analysis is desired.
+```{r}
 # Missing IBU values grouped by style of beer
 beers_breweries %>%
     group_by(Style) %>%
@@ -148,10 +176,13 @@ beers_breweries <- beers_breweries %>%
     group_by(Style) %>%
     mutate(IBU = ifelse(is.na(IBU), mean(IBU, na.rm = TRUE), IBU))
 ## Note - Still have 52 missing IBUs after this method of handling the NAs, 
+```
 
-# Some Beers don't have a style, will work on this later
-beers_clean %>% filter(Style == "")
-
+Lastly, five beers do not have a style. Because this is such a small number of beers, we will change them to "Other" to make the analysis easier.
+```{r}
+# Some Beers don't have a style, so we will change them to "Other"
+beers_breweries %>% filter(Style == "")
+beers_breweries[beers_breweries$Style == "", "Style"] = "Other"
 ```
 
 4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
@@ -163,15 +194,20 @@ beers_medians <-
               median_IBU = median(IBU, na.rm = TRUE)) %>%
     arrange(desc(median_ABV))
 
+## NEED TO ADD IBU with facet wrap somehow. Will work on later
 beers_medians %>%
     ggplot(aes(x = State, y = median_ABV)) +
     geom_bar(stat = "identity", fill = "cornflowerblue") +
     labs(x = "State", y = "Median Alcohol Content", title = "Median Alcohol Content in Each State") +
-    theme_economist_white() +
+    theme_minimal() +
     theme(axis.text.x = element_text(angle = 70, hjust = 0))
 
 print(beers_medians)
 ```
+
+There doesn't seem to be excessive variation in median IBU or ABV across states. The notable exception to this is the much lower median ABV for Utah, which may be an artifact of the state laws. ABV of all beer sold in Utah was previously limited to 3.2%. That law has been repealed and one of the authors, who lives in Utah, can confirm that the beer situation is slowly improving.
+
+While at first glance, this data doesn't seem informative, there is potential for future research here. One can imagine that the medians could reflect regional preferences for beer. This analysis could be valuable for marketing products based on their profiles or designing products based on the region they will be sold in.
 
 5. Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 ```{r}
@@ -182,11 +218,8 @@ beers_breweries %>%
 beers_breweries %>%
     filter(IBU == max(beers_breweries$IBU, na.rm = TRUE)) %>%
     select(State, Beer_Name, IBU, Brewery)
-
-#Less elegant, but also works
-max_value <- max(beers_breweries$ABV, na.rm = TRUE)
-beers_breweries[which(beers_breweries$ABV == max_value), c("State", "Beer_Name", "ABV", "Brewery")]
 ```
+The most alcoholic beer in the dataset is from Colorado. It is a Belgian Quadrupel and has 12.8%. The most bitter beer is called "Bitter Bitch Imperial IPA", which is from Oregon and has 138 IBU.
 
 6. Comment on the summary statistics and distribution of the ABV variable.
 ```{r}
@@ -203,7 +236,7 @@ beers_breweries %>%
     max = max(ABV, na.rm = TRUE)
   )
 ```
-Add comments here
+The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This is notable for being much higher than anything Budweiser is currently producing. There may be room for product line expansion in this direction based on market preferences.
 
 7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
@@ -239,9 +272,9 @@ confusionMatrix(table(classifications, na.omit(beers_breweries)$Ale))
 classifications = knn.cv(na.omit(ales)[, c("ABV", "IBU")], na.omit(ales)$Ale, k = 5)
 confusionMatrix(table(classifications, na.omit(ales)$Ale))
 ```
-The KNN model using only Ales (IPAs and other Ales) has more than a 90% accuracy rate. For identifying an Ale, the sensitivity of the model is 92.5% and the specificity is 87.8%. Practically, this means that ABV and IBU can determine whether a given Ale is an IPA or not almost all of the time. 
+The KNN model using only Ales (IPAs and other Ales) has more than a 86% accuracy rate. For identifying an Ale, the sensitivity of the model is 88.5% and the specificity is 82.9%. Practically, this means that ABV and IBU can determine whether a given Ale is an IPA or not almost all of the time. 
 
-Furthermore, the KNN model using the entire dataset of beers has a 74% accuracy rate. The whole dataset includes many other types of beers but the model still performs quite well. This suggests that both ales and IPAs have a distinct profile of alcohol content and bitterness compared to any other type of beer. 
+Furthermore, the KNN model using the entire dataset of beers has a 68% accuracy rate. The whole dataset includes many other types of beers but the model still performs quite well. This suggests that both ales and IPAs have a distinct profile of alcohol content and bitterness compared to any other type of beer. 
 
 The following chart shows the difference of ABV and IBU between IPAs and Ales. IPAs tend to have distinctly higher ABV and IBU than Ales, which explains the unusually high accuracy of the KNN model. 
 ```{r}
