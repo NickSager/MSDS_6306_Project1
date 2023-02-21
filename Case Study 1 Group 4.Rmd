@@ -147,7 +147,7 @@ sapply(beers_breweries, function(x) sum(is.na(x)))
 ```
 There are 62 missing ABV values, 1005, missing IBU values, and 5 missing beer Style values, which are not reflected in the output above.
 
-There are few enoug missing ABV values to be filled in manually using the following code. Values were obtained from websites like BeerAdvocate and Untappd.
+There are few enough missing ABV values to be filled in manually using the following code. Values were obtained from websites like BeerAdvocate and Untappd.
 ```{r}
 # writing missing ABV values to csv file
 missing_ABV <- beers_breweries %>% select(Beer_ID,Beer_Name,ABV,IBU,Brewery) %>%
@@ -163,13 +163,24 @@ beers_breweries <- beers_breweries %>% mutate(ABV = ifelse(is.na(ABV), ABV.y, AB
 beers_breweries <- beers_breweries %>% mutate(IBU = ifelse(is.na(IBU), IBU.y, IBU ), IBU) # bring over new IBUs
 ```
 
-The remaining missing values will be imputed using the mean ABV and IBU values for the style of beer. American IPA's have the highest number of missing IBU values but, as we will see later, the have a unique range of IBU values, so the imputation should be accurate. The same applies to the other Ales that make up the bulk of the missing data. Because our analysis is concerned with Ales, more effort could be put into finding these missing values if more time or money becomes available and a more accurate analysis is desired.
+The remaining missing values will be imputed using the mean ABV and IBU values for the style of beer. IBU values appear to be missing at random. The amount differs by style of beer, but we have no reason to believe it differs base on the actual value of IBU. American IPA's have the highest number of missing IBU values but, as we will see later, the have a unique range of IBU values, so the imputation should be accurate. The same applies to the other Ales that make up the bulk of the missing data, and imputation is appropriate in general because the data appears missing at random. Because our analysis is concerned with Ales, more effort could be put into finding these missing values if more time or money becomes available and a more accurate analysis is desired.
 ```{r}
 # Missing IBU values grouped by style of beer
 beers_breweries %>%
-    group_by(Style) %>%
-    summarize_all(~ sum(is.na(.))) %>%
-    arrange(desc(IBU)) %>% print()
+  group_by(Style) %>%
+  summarize_all(~ sum(is.na(.))) %>%
+  arrange(desc(IBU)) %>%
+  print()
+
+# Plot a histogram of the missing IBU values by style of beer
+beers_breweries %>%
+  group_by(Style) %>%
+  summarize_all(~ sum(is.na(.))) %>%
+  arrange(desc(IBU)) %>%
+  ggplot(aes(x = Style, y = IBU)) +
+    geom_bar(stat = "identity") +
+    labs(x = "Style", y = "Number of Missing IBU Values", title = "Number of Missing IBU Values by Style") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #Impute the values for the missing IBU values with the mean IBU value for the style of beer
 beers_breweries <- beers_breweries %>%
@@ -194,11 +205,17 @@ beers_medians <-
               median_IBU = median(IBU, na.rm = TRUE)) %>%
     arrange(desc(median_ABV))
 
-## NEED TO ADD IBU with facet wrap somehow. Will work on later
+## Plot Median values by state
 beers_medians %>%
     ggplot(aes(x = State, y = median_ABV)) +
     geom_bar(stat = "identity", fill = "cornflowerblue") +
-    labs(x = "State", y = "Median Alcohol Content", title = "Median Alcohol Content in Each State") +
+    labs(x = "State", y = "Median Alcohol Content (ABV)", title = "Median Alcohol Content in Each State") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 70, hjust = 0))
+beers_medians %>%
+    ggplot(aes(x = State, y = median_IBU)) +
+    geom_bar(stat = "identity", fill = "#d05e5e") +
+    labs(x = "State", y = "Median Bitterness (IBU)", title = "Median Bitterness in Each State") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 70, hjust = 0))
 
