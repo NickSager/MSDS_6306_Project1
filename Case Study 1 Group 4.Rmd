@@ -1,6 +1,6 @@
 ---
 title: "Case Study 1 - Beers"
-authors: "Nicholas Sager & Steven Cox"
+author: "Nicholas Sager & Steven Cox"
 date: "2/17/2023"
 output: html_document
 ---
@@ -9,7 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Case Study 1 - Beers
 
 ## Introduction
 
@@ -42,7 +41,7 @@ This looks like data we can work with.
 ## Data Exploration
 Next, we will start exploring the data for insights into the American beer market.
 
-1. How many breweries are present in each state?
+### 1. How many breweries are present in each state?
 ```{r}
 beers_breweries %>%
     group_by(State) %>%
@@ -125,7 +124,7 @@ plot_usmap(data = Brewery_Stat, values = "count") +
 Colorado has the most breweries of any state. Visually, the west coast, the midwest, Colorado, and Texas have the highest amount of breweries. This may reflect the popularity of beer in those regions which could be significant for marketing efforts.
 
 
-2. Merge the datasets and print the first 6 and last 6.
+### 2. Merge the datasets and print the first 6 and last 6.
 
 The data sets have been merged using the following R code:
 ```
@@ -138,7 +137,7 @@ head(beers_breweries, 6)
 tail(beers_breweries, 6)
 ```
 
-3. Address the missing values in each column.
+### 3. Address the missing values in each column.
 
 There are some missing data in the beers dataset. We will need to address these before we can do any analysis. 
 ```{r}
@@ -196,7 +195,7 @@ beers_breweries %>% filter(Style == "")
 beers_breweries[beers_breweries$Style == "", "Style"] = "Other"
 ```
 
-4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
+### 4. Compute the median alcohol content and international bitterness unit for each state. Plot a bar chart to compare.
 ```{r}
 beers_medians <-
     beers_breweries %>%
@@ -226,19 +225,19 @@ There doesn't seem to be excessive variation in median IBU or ABV across states.
 
 While at first glance, this data doesn't seem informative, there is potential for future research here. One can imagine that the medians could reflect regional preferences for beer. This analysis could be valuable for marketing products based on their profiles or designing products based on the region they will be sold in.
 
-5. Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+### 5. Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 ```{r}
 beers_breweries %>%
     filter(ABV == max(beers_breweries$ABV, na.rm = TRUE)) %>%
-    select(State, Beer_Name, ABV, Brewery)
+    select(State, Beer_Name, ABV, Brewery, Style)
 
 beers_breweries %>%
     filter(IBU == max(beers_breweries$IBU, na.rm = TRUE)) %>%
-    select(State, Beer_Name, IBU, Brewery)
+    select(State, Beer_Name, IBU, Brewery, Style)
 ```
 The most alcoholic beer in the dataset is from Colorado. It is a Belgian Quadrupel and has 12.8%. The most bitter beer is called "Bitter Bitch Imperial IPA", which is from Oregon and has 138 IBU.
 
-6. Comment on the summary statistics and distribution of the ABV variable.
+### 6. Comment on the summary statistics and distribution of the ABV variable.
 ```{r}
 summary(beers_breweries$ABV, na.rm = TRUE)
 
@@ -255,7 +254,7 @@ beers_breweries %>%
 ```
 The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This is notable for being much higher than anything Budweiser is currently producing. There may be room for product line expansion in this direction based on market preferences.
 
-7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
+### 7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
 beers_breweries %>%
     ggplot(aes(x = ABV, y = IBU, color = Style)) +
@@ -264,9 +263,11 @@ beers_breweries %>%
     labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") +
     theme_minimal()
 ```
- There appears to be a linear relationship between alcohol content (ABV) and bitterness (IBU). Note that the gold colored dots above the line are mostly Ales, meaning that they have higher bitterness compared to their ABV. The blue and pink dots below the line are mostly lagers, pilsners, and other light beers. These tend to be less bitter for a given ABV.
+ 
+ There appears to be a linear relationship between alcohol content (ABV) and bitterness (IBU), meaning that bitterness measured by IBU increases with alcohol content (ABV). The black line on the plot is a simple linear regression which attempts to estimate this relationship. The upward slope depicts that the relationship is positive. Note that the gold colored dots above the line are mostly Ales, meaning that they have higher bitterness compared to their ABV. The blue and pink dots below the line are mostly lagers, pilsners, and other light beers. These tend to be less bitter for a given ABV.
 
-8. Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
+### 8. Ales vs. IPAs
+Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
 In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged. 
 ```{r}
 library(caret)
