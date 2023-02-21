@@ -118,6 +118,7 @@ Here is a heat map of the amount of breweries per state.
 ```{r}
 # Heatmap of with the count over US map
 state_fips <- statepop %>% select(fips, abbr, full) # get fips values for heatmap plot
+
 Brewery_Stat <- left_join(Brewery_Stat, state_fips, by = c("State"= "abbr"))
 
 plot_usmap(data = Brewery_Stat, values = "count") + 
@@ -177,7 +178,9 @@ beers_breweries$IBU.y <- NULL
 
 #Discovered 2 Beer_Names that are not beers, but other products of the brewery - We may want to delete
 #CAN'D AID Foundation Beer ID 1790
+beers_breweries <- beers_breweries[beers_breweries$Beer_ID != 1790,]
 #Crowler Beer ID 1796
+beers_breweries <- beers_breweries[beers_breweries$Beer_ID != 1796,]
 
 #Verify reduction in missing values
 sapply(beers_breweries, function(x) sum(is.na(x)))
