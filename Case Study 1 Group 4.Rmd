@@ -14,7 +14,6 @@ library(tidyverse)
 library(ggthemes)
 library(usmap)
 library(ggplot2)
-library(ggthemes)
 library(caret)
 library(e1071)
 library(class)
@@ -122,9 +121,10 @@ state_fips <- statepop %>% select(fips, abbr, full) # get fips values for heatma
 Brewery_Stat <- left_join(Brewery_Stat, state_fips, by = c("State"= "abbr"))
 
 plot_usmap(data = Brewery_Stat, values = "count") + 
-  labs(title = "Heat Map of Breweries in Each State") + 
+  labs(title = "Heat Map of Breweries in Each State", ylabel = count) + 
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
   scale_fill_gradient('count',  low = "lightblue", high = "red")
+
 ```
 
 Colorado has the most breweries of any state. Visually, the west coast, the Midwest, Colorado, and Texas have the highest amount of breweries. This may reflect the popularity of beer in those regions which could be significant for marketing efforts.
@@ -175,6 +175,10 @@ beers_breweries <- beers_breweries %>% mutate(IBU = ifelse(is.na(IBU), IBU.y, IB
 beers_breweries$ABV.y <- NULL
 beers_breweries$IBU.y <- NULL
 
+#Discovered 2 Beer_Names that are not beers, but other products of the brewery - We may want to delete
+#CAN'D AID Foundation Beer ID 1790
+#Crowler Beer ID 1796
+
 #Verify reduction in missing values
 sapply(beers_breweries, function(x) sum(is.na(x)))
 ```
@@ -194,10 +198,11 @@ beers_breweries %>%
   summarize_all(~ sum(is.na(.))) %>%
   arrange(desc(IBU)) %>%
   ggplot(aes(x = Style, y = IBU)) +
-    geom_bar(stat = "identity") +
-    labs(x = "Style", y = "Number of Missing IBU Values", 
+    geom_bar(stat = "identity", fill = "blue") +
+    labs(x = "Style of Beer", y = "Number of Missing IBU Values", 
          title = "Number of Missing IBU Values by Style") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
 
 #Impute the values for the missing IBU values with the mean IBU value for the style of beer
 beers_breweries <- beers_breweries %>%
@@ -206,11 +211,12 @@ beers_breweries <- beers_breweries %>%
 
 ## Note - Still have 52 missing IBUs after this method of handling the NAs, 
 sapply(beers_breweries, function(x) sum(is.na(x)))
+## Show remaining missing IBU values, insignificant to our modeling
 beers_breweries %>% select(Style,IBU) %>% 
   group_by(Style) %>%
   summarize_all(~ sum(is.na(.))) %>%
   arrange(desc(IBU)) %>%
-  print()
+  print(n = 10)
 ```
 
 Lastly, five beers do not have a style. Because this is such a small number of beers, we will change them to "Other" to make the analysis easier.
