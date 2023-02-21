@@ -302,14 +302,19 @@ beers_breweries %>%
   labs(x = "Alcohol Content (ABV)", y = "Count", 
        title = "Alcohol by Volume Historgram") +
   theme_economist()
-describe(beers_breweries$ABV)
+ #describe(beers_breweries$ABV)
 ```
 The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This is notable for being much higher than anything Budweiser is currently producing. There may be room for product line expansion in this direction based on market preferences.
 
 ### 7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
+
+# Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
+beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = TRUE), "IPA",
+                        ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other"))
+
 beers_breweries %>%
-    ggplot(aes(x = ABV, y = IBU, color = Ale)) +
+    ggplot(aes(x = ABV, y = IBU, color = Ale)) + 
     geom_point() +
     geom_smooth(method = "lm", se = FALSE, color = "black") +
     labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") + scale_x_continuous(labels = scales::percent) + theme_stata()
