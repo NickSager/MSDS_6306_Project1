@@ -120,7 +120,7 @@ Here is a heat map of the amount of breweries per state.
 # Heatmap of with the count over US map
 state_fips <- statepop %>% select(fips, abbr, full) # get fips values for heatmap plot
 Brewery_Stat <- left_join(Brewery_Stat, state_fips, by = c("State"= "abbr"))
-state_pop$count <- Brewery_Stat$count
+
 plot_usmap(data = Brewery_Stat, values = "count") + 
   labs(title = "Heat Map of Breweries in Each State", ylabel = count) + 
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
