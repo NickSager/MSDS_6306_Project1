@@ -7,6 +7,17 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# Required Libraries
+library(ggthemes)
+library(tidyverse)
+library(ggthemes)
+library(usmap)
+library(ggplot2)
+library(ggthemes)
+library(caret)
+library(e1071)
+library(class)
 ```
 
 
@@ -18,9 +29,6 @@ This case study is conducted to analyze data on a wide variety of American beers
 
 First, we will read in the beers data, and merge the breweries data so that each beer has brewery data associated with it. Then we will view a few row to make sure it looks ok. 
 ```{r}
-library(tidyverse)
-library(ggthemes)
-
 beers <- read.csv("Data/Beers.csv")
 breweries <- read.csv("Data/Breweries.csv")
 
@@ -54,7 +62,9 @@ beers_breweries %>%
     arrange(desc(count))
 #Need to figure out why those are different. 
 #Check that the number of breweries match the number of brewery ids
-n_distinct(beers_breweries$Brewery) == n_distinct(beers_breweries$Brewery_id)
+n_distinct(beers_breweries$Brewery_id)
+n_distinct(beers_breweries$Brewery)
+
 ```
 Here, we can see that there are 558 brewery ids in the data set, but only 551 unique brewery names. This means that there are some breweries with multiple ids. We will need to investigate this further. 
 
@@ -88,11 +98,7 @@ It's a small change, but will make any analysis we do of state or brewery aggreg
 Now we can address the question at hand: how many breweries are in each state?
 ```{r}
 # Plot the number of breweries in each state
-library(usmap)
-library(ggplot2)
-library(ggthemes)
-
-# Noticed extra spaces in State abbr
+## Noticed extra spaces in State abbr
 beers_breweries$State <- str_replace_all(beers_breweries$State," ","")
 
 # Setup Stat for graphs
@@ -103,26 +109,30 @@ Brewery_Stat = beers_breweries %>%
 
 # Basic Bar plot
 ggplot(Brewery_Stat, aes(x = reorder(State, -count), y = count)) +
-    geom_bar(stat = "identity") +
+    geom_bar(stat = "identity", fill = "red") +
     labs(x = "State", y = "Number of Breweries", title = "Number of Breweries in Each State") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 ```
 
 Here is a heat map of the amount of breweries per state.
 ```{r}
 # Heatmap of with the count over US map
-state_fips <- statepop %>% select(fips, abbr) # get fips values for heatmap plot
+state_fips <- statepop %>% select(fips, abbr, full) # get fips values for heatmap plot
 Brewery_Stat <- left_join(Brewery_Stat, state_fips, by = c("State"= "abbr"))
 
 plot_usmap(data = Brewery_Stat, values = "count") + 
   labs(title = "Heat Map of Breweries in Each State") + 
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
   scale_fill_gradient('count',  low = "lightblue", high = "red")
-
 ```
 
-Colorado has the most breweries of any state. Visually, the west coast, the midwest, Colorado, and Texas have the highest amount of breweries. This may reflect the popularity of beer in those regions which could be significant for marketing efforts.
-
+Colorado has the most breweries of any state. Visually, the west coast, the Midwest, Colorado, and Texas have the highest amount of breweries. This may reflect the popularity of beer in those regions which could be significant for marketing efforts.
+```{r}
+# Top and Bottom 10 
+Brewery_Stat %>% select(full,count) %>% head(.,10)
+Brewery_Stat %>% select(full,count) %>% tail(.,10)
+```
 
 ### 2. Merge the datasets and print the first 6 and last 6.
 
@@ -160,12 +170,19 @@ beers_breweries <- left_join(beers_breweries, missing_ABV, by = c("Beer_ID")) %>
 
 beers_breweries <- beers_breweries %>% mutate(ABV = ifelse(is.na(ABV), ABV.y, ABV ), ABV) #bring over new ABV's
 beers_breweries <- beers_breweries %>% mutate(IBU = ifelse(is.na(IBU), IBU.y, IBU ), IBU) # bring over new IBUs
+
+#Remove ABV.y and IBU.y
+beers_breweries$ABV.y <- NULL
+beers_breweries$IBU.y <- NULL
+
+#Verify reduction in missing values
+sapply(beers_breweries, function(x) sum(is.na(x)))
 ```
 
 The remaining missing values will be imputed using the mean ABV and IBU values for the style of beer. IBU values appear to be missing at random. The amount differs by style of beer, but we have no reason to believe it differs base on the actual value of IBU. American IPA's have the highest number of missing IBU values but, as we will see later, the have a unique range of IBU values, so the imputation should be accurate. The same applies to the other Ales that make up the bulk of the missing data, and imputation is appropriate in general because the data appears missing at random. Because our analysis is concerned with Ales, more effort could be put into finding these missing values if more time or money becomes available and a more accurate analysis is desired.
 ```{r}
 # Missing IBU values grouped by style of beer
-beers_breweries %>%
+beers_breweries %>% 
   group_by(Style) %>%
   summarize_all(~ sum(is.na(.))) %>%
   arrange(desc(IBU)) %>%
@@ -178,14 +195,22 @@ beers_breweries %>%
   arrange(desc(IBU)) %>%
   ggplot(aes(x = Style, y = IBU)) +
     geom_bar(stat = "identity") +
-    labs(x = "Style", y = "Number of Missing IBU Values", title = "Number of Missing IBU Values by Style") +
+    labs(x = "Style", y = "Number of Missing IBU Values", 
+         title = "Number of Missing IBU Values by Style") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #Impute the values for the missing IBU values with the mean IBU value for the style of beer
 beers_breweries <- beers_breweries %>%
     group_by(Style) %>%
     mutate(IBU = ifelse(is.na(IBU), mean(IBU, na.rm = TRUE), IBU))
+
 ## Note - Still have 52 missing IBUs after this method of handling the NAs, 
+sapply(beers_breweries, function(x) sum(is.na(x)))
+beers_breweries %>% select(Style,IBU) %>% 
+  group_by(Style) %>%
+  summarize_all(~ sum(is.na(.))) %>%
+  arrange(desc(IBU)) %>%
+  print()
 ```
 
 Lastly, five beers do not have a style. Because this is such a small number of beers, we will change them to "Other" to make the analysis easier.
@@ -218,7 +243,26 @@ beers_medians %>%
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 70, hjust = 0))
 
-print(beers_medians)
+#Print top 10 ABV medians
+print(beers_medians[,1:3], n = 10)
+
+#Print Medians
+beers_medians <- beers_medians %>% arrange(State) 
+print(beers_medians[,1:3], n = 50)
+
+
+# Heatmap of with the medians over US map
+beers_medians <- left_join(beers_medians, state_fips, by = c("State"= "abbr"))
+
+plot_usmap(data = beers_medians, values = "median_ABV") + 
+  labs(title = "Heat Map of Median Alcohol by Volume (ABV) for Each State") + 
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
+  scale_fill_gradient('ABV',  low = "grey", high = "Red")
+
+plot_usmap(data = beers_medians, values = "median_IBU") + 
+  labs(title = "Heat Map of Median Bitterness in Each State") + 
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
+  scale_fill_gradient('IBU',  low = "grey", high = "Blue")
 ```
 
 There doesn't seem to be excessive variation in median IBU or ABV across states. The notable exception to this is the much lower median ABV for Utah, which may be an artifact of the state laws. ABV of all beer sold in Utah was previously limited to 3.2%. That law has been repealed and one of the authors, who lives in Utah, can confirm that the beer situation is slowly improving.
@@ -251,17 +295,25 @@ beers_breweries %>%
     median = median(ABV, na.rm = TRUE),
     max = max(ABV, na.rm = TRUE)
   )
+
+beers_breweries %>%  
+  ggplot(aes(x = ABV, fill = "ABV")) + 
+  geom_histogram(show.legend = FALSE) +
+  labs(x = "Alcohol Content (ABV)", y = "Count", 
+       title = "Alcohol by Volume Historgram") +
+  theme_economist()
+describe(beers_breweries$ABV)
 ```
 The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This is notable for being much higher than anything Budweiser is currently producing. There may be room for product line expansion in this direction based on market preferences.
 
 ### 7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
 ```{r}
 beers_breweries %>%
-    ggplot(aes(x = ABV, y = IBU, color = Style)) +
-    geom_point(show.legend = FALSE) +
+    ggplot(aes(x = ABV, y = IBU, color = Ale)) +
+    geom_point() +
     geom_smooth(method = "lm", se = FALSE, color = "black") +
-    labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") +
-    theme_minimal()
+    labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") + scale_x_continuous(labels = scales::percent) + theme_stata()
+
 ```
  
  There appears to be a linear relationship between alcohol content (ABV) and bitterness (IBU), meaning that bitterness measured by IBU increases with alcohol content (ABV). The black line on the plot is a simple linear regression which attempts to estimate this relationship. The upward slope depicts that the relationship is positive. Note that the gold colored dots above the line are mostly Ales, meaning that they have higher bitterness compared to their ABV. The blue and pink dots below the line are mostly lagers, pilsners, and other light beers. These tend to be less bitter for a given ABV.
@@ -270,9 +322,7 @@ beers_breweries %>%
 Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
 In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged. 
 ```{r}
-library(caret)
-library(e1071)
-library(class)
+
 # Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
 beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = TRUE), "IPA",
                         ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other"))
