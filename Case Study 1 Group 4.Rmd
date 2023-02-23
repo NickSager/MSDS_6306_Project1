@@ -360,11 +360,61 @@ The KNN model using only Ales (IPAs and other Ales) has more than a 86% accuracy
 Furthermore, the KNN model using the entire dataset of beers has a 68% accuracy rate. The whole dataset includes many other types of beers but the model still performs quite well. This suggests that both ales and IPAs have a distinct profile of alcohol content and bitterness compared to any other type of beer. 
 
 The following chart shows the difference of ABV and IBU between IPAs and Ales. IPAs tend to have distinctly higher ABV and IBU than Ales, which explains the unusually high accuracy of the KNN model. 
-```{r}
-ales %>%
+```{r warning=FALSE, message=FALSE}
+  ales %>%
     ggplot(aes(x = ABV, y = IBU, color = Ale)) +
     geom_point(show.legend = FALSE) +
     geom_smooth(aes(color = Ale), method = "lm", se = FALSE) +
     labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") +
-    theme_minimal()
+    theme_gdocs()
 ```
+
+To further test the difference between Ales and IPA's , we can conduct a two sample t-test on the difference of their IBU and ABV values. This powerful statistical method will test whether the difference between the means of the two groups is statistically significant, based on how their values are distributed. The following chart shows the average ABV and the 95% confidence interval for each beer style. The confidence interval is the range of values that we can be 95% confident that the true mean lies within.  
+```{r}
+library(agricolae)
+
+fit = lm(ABV ~ Ale, data = beers_breweries)
+#anova(fit)
+
+lsd_abv = LSD.test(fit, "Ale", p.adj = "none", group = FALSE)
+
+lsd_abv$means[1:2, ] %>%
+  ggplot(aes(x = rownames(.), y = ABV, color = rownames(.))) +
+  geom_point() +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
+  ylim(0.03, 0.1) +
+  labs(
+    title = "Mean ABV by Beer Style",
+    subtitle = "With 95% Confidence Interval",
+    x = NULL,
+    y = "Estimate",
+    color = "Style"
+  ) +
+  theme_gdocs()
+```
+
+We can see that the mean ABV of IPA's is significantly higher than the mean ABV of Ales. The error bars indicate that we can be 95% confident that their ranges are not even close to overlapping. In fact, the p-value that their difference in ABV value is 0 is 2.2e-16, which is extremely small. This is one reason the KNN model is so effective.
+
+Here is a chart showing the average IBU and the 95% confidence interval for each beer style:
+```{r}
+fit = lm(IBU ~ Ale, data = beers_breweries)
+#anova(fit)
+
+lsd_ibu = LSD.test(fit, "Ale", p.adj = "none", group = FALSE)
+
+lsd_ibu$means[1:2, ] %>%
+  ggplot(aes(x = rownames(.), y = IBU, color = rownames(.))) +
+  geom_point() +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
+  ylim(0, 100) +
+  labs(
+    title = "Mean IBU by Beer Style",
+    subtitle = "With 95% Confidence Interval",
+    x = NULL,
+    y = "Estimate",
+    color = "Style"
+  ) +
+  theme_gdocs()
+```
+
+Again, we can see that their ranges are not even close to overlapping. The p-value that their difference in IBU value is 0 is small enough to be effectively zero. This is further reason to expect the KNN model to be effective.
