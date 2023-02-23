@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 
 # Required Libraries
 library(ggthemes)
@@ -292,7 +292,7 @@ beers_breweries %>%
 The most alcoholic beer in the dataset is from Colorado. It is a Belgian Quadrupel and has 12.8%. The most bitter beer is called "Bitter Bitch Imperial IPA", which is from Oregon and has 138 IBU.
 
 ### 6. Comment on the summary statistics and distribution of the ABV variable.
-```{r}
+```{r warning=FALSE, message=FALSE}
 summary(beers_breweries$ABV, na.rm = TRUE)
 
 beers_breweries %>% 
@@ -311,14 +311,13 @@ beers_breweries %>%
   geom_histogram(show.legend = FALSE) +
   labs(x = "Alcohol Content (ABV)", y = "Count", 
        title = "Alcohol by Volume Historgram") +
-  theme_economist()
+  theme_gdocs()
  #describe(beers_breweries$ABV)
 ```
 The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This is notable for being much higher than anything Budweiser is currently producing. There may be room for product line expansion in this direction based on market preferences.
 
 ### 7. Is there an apparent relationship between the bitterness of the beer and its alcoholic content? Draw a scatter plot.  Make your best judgment of a relationship and EXPLAIN your answer.
-```{r}
-
+```{r warning=FALSE, message=FALSE}
 # Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
 beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = TRUE), "IPA",
                         ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other"))
@@ -327,11 +326,13 @@ beers_breweries %>%
     ggplot(aes(x = ABV, y = IBU, color = Ale)) + 
     geom_point() +
     geom_smooth(method = "lm", se = FALSE, color = "black") +
-    labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") + scale_x_continuous(labels = scales::percent) + theme_stata()
+    labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") + scale_x_continuous(labels = scales::percent) + theme_gdocs()
 
 ```
  
  There appears to be a linear relationship between alcohol content (ABV) and bitterness (IBU), meaning that bitterness measured by IBU increases with alcohol content (ABV). The black line on the plot is a simple linear regression which attempts to estimate this relationship. The upward slope depicts that the relationship is positive. Note that the gold colored dots above the line are mostly Ales, meaning that they have higher bitterness compared to their ABV. The blue and pink dots below the line are mostly lagers, pilsners, and other light beers. These tend to be less bitter for a given ABV.
+
+## Modelling
 
 ### 8. Ales vs. IPAs
 Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
@@ -418,3 +419,104 @@ lsd_ibu$means[1:2, ] %>%
 ```
 
 Again, we can see that their ranges are not even close to overlapping. The p-value that their difference in IBU value is 0 is small enough to be effectively zero. This is further reason to expect the KNN model to be effective.
+
+
+### 9. Broadening our analysis to include other styles of beer
+
+Since the analysis of Ales vs IPAs, was so effective, we may as well use the same method to investigate the difference between other styles of beer. This may be useful for Budweiser to determine what specific profiles of ABV and IBU are associated with each style of beer. This could help with positioning their beers relative to the existing markets.
+
+First, we will further filter data into categories of common beer styles and check what is left over:
+```{r}
+# Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
+beers_breweries$Category <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = TRUE), "IPA",
+  ifelse(grepl("Lager", beers_breweries$Style, ignore.case = TRUE), "Lager",
+    ifelse(grepl("Pils", beers_breweries$Style, ignore.case = TRUE), "Pilsner",
+      ifelse(grepl("Porter", beers_breweries$Style, ignore.case = TRUE), "Porter",
+        ifelse(grepl("Stout", beers_breweries$Style, ignore.case = TRUE), "Stout",
+          ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other")
+        )
+      )
+    )
+  )
+)
+
+beers_breweries %>%
+  filter(Category == "Other") %>%
+  select(Style) %>%
+  unique() %>%
+  print(n=100)
+```
+
+The styles that haven't been categorized are either too specific or too obscure to be useful. We will leave them as "Other".
+
+Here is a chart showing the distribution of common beer categories we've identified:
+```{r}
+# Visualize the distribution of beer styles
+beers_breweries %>%
+  ggplot(aes(x = Category, fill = Category)) +
+  geom_bar(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Distribution of Beer Styles", x = NULL, y = "Count") +
+  theme_gdocs()
+```
+
+Next, we will use the same statistical methods as above to investigate the ABV and IBU values of each category of beer:
+```{r}
+fit = lm(ABV ~ Category, data = beers_breweries)
+#anova(fit)
+
+lsd_abv = LSD.test(fit, "Category", p.adj = "none", group = FALSE)
+
+lsd_abv$means %>%
+  ggplot(aes(x = rownames(.), y = ABV, color = rownames(.))) +
+  geom_point() +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
+  ylim(0.04, 0.08) +
+  labs(
+    title = "Mean ABV by Beer Style",
+    subtitle = "With 95% Confidence Interval",
+    x = NULL,
+    y = "Estimate",
+    color = "Style"
+  ) +
+  theme_gdocs()
+```
+
+We can see that, while some categories have overlapping confidence intervals, most are different. 
+
+Here is the same analysis for the IBUs:
+```{r}
+fit = lm(IBU ~ Category, data = beers_breweries)
+#anova(fit)
+
+lsd_ibu = LSD.test(fit, "Category", p.adj = "none", group = FALSE)
+
+lsd_ibu$means %>%
+  ggplot(aes(x = rownames(.), y = IBU, color = rownames(.))) +
+  geom_point() +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
+  ylim(0, 100) +
+  labs(
+    title = "Mean IBU by Beer Style",
+    subtitle = "With 95% Confidence Interval",
+    x = NULL,
+    y = "Estimate",
+    color = "Style"
+  ) +
+  theme_gdocs()
+```
+
+Here, there is also some overlap, but also significant differences. We can expect that a KNN model built on these categories will be effective, if less so than the one that categorizes Ales and IPAs.
+
+### 10. Building a KNN model to predict beer style
+
+```{r}
+# Use KNN to classify the beers into broad categories using ABV and IBU as the predictors
+# The entire dataset is used to train the model, including "Other" beers
+classifications = knn.cv(na.omit(beers_breweries)[, c("ABV", "IBU")], na.omit(beers_breweries)$Category, k = 5)
+confusionMatrix(table(classifications, na.omit(beers_breweries)$Category))
+```
+
+The model does pretty well. Overall accuracy is 0.71, meaning that it correctly classifies 71% beers. Considering that there are 5 categories, this is a very usable result. The model also remains very accurate (~84% balanced accuracy) at classifying Ales and IPAs, which is the most important category for Budweiser. The authors expect this ability to either classify or reject a beer as an IPA or an Ale (or any other style) to be very useful for Budweiser when evaluating new products.
+
+## Conclusion
