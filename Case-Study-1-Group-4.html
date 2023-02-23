@@ -991,32 +991,32 @@ confusionMatrix(table(classifications, na.omit(beers_breweries)$Ale))</code></pr
 ## 
 ##                
 ## classifications Ale IPA Other
-##           Ale   698  58   228
-##           IPA    57 486    42
-##           Other 202  26   546
+##           Ale   700  58   224
+##           IPA    60 489    41
+##           Other 197  23   551
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.7384          
-##                  95% CI : (0.7201, 0.7561)
+##                Accuracy : 0.7426          
+##                  95% CI : (0.7244, 0.7602)
 ##     No Information Rate : 0.4085          
-##     P-Value [Acc &gt; NIR] : &lt;2e-16          
+##     P-Value [Acc &gt; NIR] : &lt; 2e-16         
 ##                                           
-##                   Kappa : 0.5991          
+##                   Kappa : 0.6058          
 ##                                           
-##  Mcnemar&#39;s Test P-Value : 0.1482          
+##  Mcnemar&#39;s Test P-Value : 0.07759         
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: Ale Class: IPA Class: Other
-## Sensitivity              0.7294     0.8526       0.6691
-## Specificity              0.7937     0.9442       0.8507
-## Pos Pred Value           0.7093     0.8308       0.7054
-## Neg Pred Value           0.8094     0.9522       0.8279
+## Sensitivity              0.7315     0.8579       0.6752
+## Specificity              0.7965     0.9430       0.8559
+## Pos Pred Value           0.7128     0.8288       0.7147
+## Neg Pred Value           0.8112     0.9538       0.8314
 ## Prevalence               0.4085     0.2433       0.3483
-## Detection Rate           0.2979     0.2074       0.2330
-## Detection Prevalence     0.4200     0.2497       0.3303
-## Balanced Accuracy        0.7615     0.8984       0.7599</code></pre>
+## Detection Rate           0.2988     0.2087       0.2352
+## Detection Prevalence     0.4191     0.2518       0.3291
+## Balanced Accuracy        0.7640     0.9005       0.7656</code></pre>
 <pre class="r"><code># KNN done with only Ales
 classifications = knn.cv(na.omit(ales)[, c(&quot;ABV&quot;, &quot;IBU&quot;)], na.omit(ales)$Ale, k = 5)
 confusionMatrix(table(classifications, na.omit(ales)$Ale))</code></pre>
@@ -1024,26 +1024,26 @@ confusionMatrix(table(classifications, na.omit(ales)$Ale))</code></pre>
 ## 
 ##                
 ## classifications Ale IPA
-##             Ale 888  68
-##             IPA  69 502
+##             Ale 889  68
+##             IPA  68 502
 ##                                           
-##                Accuracy : 0.9103          
-##                  95% CI : (0.8948, 0.9241)
+##                Accuracy : 0.9109          
+##                  95% CI : (0.8955, 0.9247)
 ##     No Information Rate : 0.6267          
 ##     P-Value [Acc &gt; NIR] : &lt;2e-16          
 ##                                           
-##                   Kappa : 0.8083          
+##                   Kappa : 0.8096          
 ##                                           
 ##  Mcnemar&#39;s Test P-Value : 1               
 ##                                           
-##             Sensitivity : 0.9279          
+##             Sensitivity : 0.9289          
 ##             Specificity : 0.8807          
 ##          Pos Pred Value : 0.9289          
-##          Neg Pred Value : 0.8792          
+##          Neg Pred Value : 0.8807          
 ##              Prevalence : 0.6267          
-##          Detection Rate : 0.5815          
-##    Detection Prevalence : 0.6261          
-##       Balanced Accuracy : 0.9043          
+##          Detection Rate : 0.5822          
+##    Detection Prevalence : 0.6267          
+##       Balanced Accuracy : 0.9048          
 ##                                           
 ##        &#39;Positive&#39; Class : Ale             
 ## </code></pre>
@@ -1269,45 +1269,45 @@ confusionMatrix(table(classifications, na.omit(beers_breweries)$Category))</code
 ## 
 ##                
 ## classifications Ale IPA Lager Other Pilsner Porter Stout
-##         Ale     761  65    39   131      37     33    31
-##         IPA      61 491     5    20       3      3    17
-##         Lager    27   1    82    23       3      0     3
-##         Other    86   8    29   218       6      7     4
-##         Pilsner   4   0     0     1      41      0     0
-##         Porter   11   1     1     2       1     28     1
-##         Stout     7   4     0     2       0      1    44
+##         Ale     761  63    42   131      38     32    31
+##         IPA      60 493     5    21       3      4    17
+##         Lager    27   1    81    20       2      0     2
+##         Other    84   8    27   221       6      6     4
+##         Pilsner   7   0     0     1      41      0     0
+##         Porter    9   1     1     1       1     29     1
+##         Stout     9   4     0     2       0      1    45
 ## 
 ## Overall Statistics
 ##                                           
-##                Accuracy : 0.7106          
-##                  95% CI : (0.6918, 0.7289)
+##                Accuracy : 0.7132          
+##                  95% CI : (0.6944, 0.7314)
 ##     No Information Rate : 0.4085          
 ##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
 ##                                           
-##                   Kappa : 0.5948          
+##                   Kappa : 0.5983          
 ##                                           
 ##  Mcnemar&#39;s Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: Ale Class: IPA Class: Lager Class: Other
-## Sensitivity              0.7952     0.8614      0.52564      0.54912
-## Specificity              0.7576     0.9385      0.97394      0.92806
-## Pos Pred Value           0.6937     0.8183      0.58993      0.60894
-## Neg Pred Value           0.8427     0.9547      0.96642      0.90982
+## Sensitivity              0.7952     0.8649      0.51923      0.55668
+## Specificity              0.7569     0.9380      0.97622      0.93063
+## Pos Pred Value           0.6931     0.8176      0.60902      0.62079
+## Neg Pred Value           0.8426     0.9557      0.96606      0.91142
 ## Prevalence               0.4085     0.2433      0.06658      0.16944
-## Detection Rate           0.3248     0.2096      0.03500      0.09304
-## Detection Prevalence     0.4682     0.2561      0.05933      0.15280
-## Balanced Accuracy        0.7764     0.9000      0.74979      0.73859
+## Detection Rate           0.3248     0.2104      0.03457      0.09432
+## Detection Prevalence     0.4686     0.2574      0.05676      0.15194
+## Balanced Accuracy        0.7760     0.9014      0.74773      0.74365
 ##                      Class: Pilsner Class: Porter Class: Stout
-## Sensitivity                 0.45055       0.38889      0.44000
-## Specificity                 0.99778       0.99251      0.99376
-## Pos Pred Value              0.89130       0.62222      0.75862
-## Neg Pred Value              0.97823       0.98085      0.97549
+## Sensitivity                 0.45055       0.40278      0.45000
+## Specificity                 0.99645       0.99384      0.99287
+## Pos Pred Value              0.83673       0.67442      0.73770
+## Neg Pred Value              0.97820       0.98130      0.97590
 ## Prevalence                  0.03884       0.03073      0.04268
-## Detection Rate              0.01750       0.01195      0.01878
-## Detection Prevalence        0.01963       0.01921      0.02475
-## Balanced Accuracy           0.72416       0.69070      0.71688</code></pre>
+## Detection Rate              0.01750       0.01238      0.01921
+## Detection Prevalence        0.02091       0.01835      0.02603
+## Balanced Accuracy           0.72350       0.69831      0.72143</code></pre>
 <p>The model does pretty well. Overall accuracy is 0.71, meaning that it
 correctly classifies 71% beers. Considering that there are 5 categories,
 this is a very usable result. The model also remains very accurate (~84%
