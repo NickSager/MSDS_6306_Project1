@@ -1,7 +1,7 @@
 ---
 title: "Case Study 1 - Beers"
 author: "Nicholas Sager & Steven Cox"
-date: "2/25/2023"
+date: "2/26/2023"
 output: html_document
 ---
 
@@ -50,6 +50,8 @@ This looks like data we can work with.
 Next, we will start exploring the data for insights into the American beer market.
 
 ### 1. How many breweries are present in each state?
+
+First we will investigate the distribution of breweries by state.
 ```{r}
 beers_breweries %>%
     group_by(State) %>%
@@ -66,6 +68,7 @@ n_distinct(beers_breweries$Brewery_id)
 n_distinct(beers_breweries$Brewery)
 
 ```
+
 Here, we can see that there are 558 brewery ids in the data set, but only 551 unique brewery names. This means that there are some breweries with multiple ids. We will need to investigate this further. 
 
 The following code searches for brewery names that are in the data set more than once and combines their brewery id number.
@@ -339,9 +342,12 @@ beers_breweries %>%
 
 ## Modelling
 
-### 8. Ales vs. IPAs [REWRITE]
-Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
-In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged. 
+### 8. Ales vs. IPAs
+Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA). To do so, we will use two strategies. First we will use a simple machine learning model called a KNN (K-Nearest Neighbors) model to predict whether beers in the dataset are Ales or IPAs. The KNN model will look at the nearest beers to the ABV and IBU in question, and classify the beer as an IPA or an Ale based on the majority of the surrounding beers. High accuracy in this model would indicate that there is a clear difference between IPAs and Ales. 
+
+Next we will use a statistical tool called a t-test to compare the ABV and IBU of IPAs and Ales. This is a more rigorous test that will evaluate whether the difference in ABV and IBU between the two beer Styles is statistically significant.
+
+Here are the results of the KNN model:
 ```{r}
 set.seed(137)
 # Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
@@ -352,14 +358,14 @@ beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = 
 ales <- beers_breweries %>%
     filter(Ale == "IPA" | Ale == "Ale")
 
+# KNN done with only Ales
+classifications = knn.cv(na.omit(ales)[, c("ABV", "IBU")], na.omit(ales)$Ale, k = 5)
+confusionMatrix(table(classifications, na.omit(ales)$Ale))
+
 # Use KNN to classify the beers into IPAs and Ales using ABV and IBU as the predictors
 # The entire dataset is used to train the model, including "Other" beers
 classifications = knn.cv(na.omit(beers_breweries)[, c("ABV", "IBU")], na.omit(beers_breweries)$Ale, k = 5)
 confusionMatrix(table(classifications, na.omit(beers_breweries)$Ale))
-
-# KNN done with only Ales
-classifications = knn.cv(na.omit(ales)[, c("ABV", "IBU")], na.omit(ales)$Ale, k = 5)
-confusionMatrix(table(classifications, na.omit(ales)$Ale))
 ```
 The KNN model using only Ales (IPAs and other Ales) has more than a 91% accuracy rate. For identifying an Ale, the sensitivity of the model is 92.8% and the specificity is 88.3%. Practically, this means that ABV and IBU can determine whether a given Ale is an IPA or not almost all of the time. 
 
@@ -375,7 +381,7 @@ The following chart shows the difference of ABV and IBU between IPAs and Ales. I
     theme_gdocs()
 ```
 
-To further test the difference between Ales and IPA's , we can conduct a two sample t-test on the difference of their IBU and ABV values. This powerful statistical method will test whether the difference between the means of the two groups is statistically significant, based on how their values are distributed. The following chart shows the average ABV and the 95% confidence interval for the mean value of each beer style. The confidence interval is the range of values that we can be 95% confident that the true mean lies within.  
+To further test the difference between Ales and IPA's , we can conduct a two sample t-test on the difference of their IBU and ABV values. This statistical method will test whether the difference between the means of the two groups is statistically significant, based on how their values are distributed. The following chart shows the average ABV and the 95% confidence interval for the mean value of each beer style. The confidence interval is the range of values that we can be 95% confident that the true mean lies within.  
 ```{r}
 library(agricolae)
 fit = lm(ABV ~ Ale, data = beers_breweries)
@@ -474,6 +480,7 @@ beers_breweries %>%
   labs(title = "Distribution of ABV by Beer Style", x = NULL, y = "ABV") +
   theme_gdocs()
 ```
+
 They appear to fall into distinct ranges, but we can use the t.test to determine if they are significantly different from each other.
 
 The following chart shows the mean value of each category of beer and the 95% confidence interval for their mean values obtained from pairwise t-tests:
@@ -549,4 +556,45 @@ confusionMatrix(table(classifications, na.omit(beers_breweries)$Category))
 
 The model does pretty well. Overall accuracy is 0.71, meaning that it correctly classifies 71% beers. Considering that there are 7 categories, this is a very usable result. The model also remains very accurate (~84% balanced accuracy) at classifying Ales and IPAs, which is the most important category for Budweiser. The authors expect this ability to either classify or reject a beer as an IPA or an Ale (or any other style) to be very useful for Budweiser when evaluating new products.
 
+Finally, we can compare the results from our analysis of the American Beer market with some of Budweiser's top offerings. The following chart shows the ABV and IBU values by style, as well as the Budweiser's top offerings as the blue triangles:
+```{r}
+# Plot the ABV and IBU values for each beer style, as well as Budweiser's top offerings
+budweiser_top <- data.frame(
+  Beer_Name = c("Budweiser Lager",
+    "Bud Light Lager",
+    "Budweiser Select Lager",
+    "Budweiser Black Crown Lager",
+    "Budweiser Copper Lager",
+    "Budweiser Freedom Reserve Red Lager",
+    "Budweiser Chelada", "Bud Ice Lager",
+    "Bud Light Lime Lager",
+    "Bud Light Platinum Lager"),
+  ABV = c(.05, .042, .043, .060, .062, .054, .042, .055, .042, .060),
+  IBU = c(12, 6, 23, 30, NA, 16, NA, 12, 6, 20),
+  Category = c("Budweiser Top 10")
+)
+
+beers_breweries %>%
+  ggplot(aes(x = ABV, y = IBU, color = Category)) +
+  geom_point() +
+  geom_point(data = budweiser_top, aes(x = ABV, y = IBU), color = "#4a06e9", size = 6, shape = 17) +
+  labs(
+    title = "ABV and IBU by Beer Style",
+    subtitle = "With Budweiser's Top Offerings",
+    x = "ABV",
+    y = "IBU",
+    color = "Style"
+  ) +
+  theme_gdocs()
+```
+
+Budweiser's top offerings are all Lagers, which isn't surprising, as Budweiser is the largest producer of Lagers in the United States. However, it is interesting to note that Budweiser's top offerings are all in the lower range of ABV and IBU for the market, and that the market for Lagers is not as broad as the market for Ales and IPAs. This may be useful information for Budweiser as they develop new products.
+
 ## Conclusion
+
+The American domestic beer market has a broad and diverse variety of beer styles available. In our analysis, we have learned common profiles of alcohol content (ABV) and bitterness (IBU) for each style of beer, as well as for each category. We have also learned that a KNN model can be used to accurately classify a beer into the proper category based on its ABV and IBU values, and perhaps more usefully, determine whether a beer fits into the market norms for its style. Lastly, we have seen how Budweiser's offerings of Lagers relates to the broader market, and hopefully that information can be used to inform future product development.
+
+This analysis has answered the initial questions posed by Budweiser's request, and has perhaps raised even more. The authors hope that this analysis will be useful to Budweiser in their future product development. Any questions about this analysis or proposals for additional research can be directed to the authors at:
+
+Nicholas Sager: nsager@smu.edu  
+Steven Cox: sacox@mail.smu.edu
