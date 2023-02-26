@@ -224,6 +224,9 @@ beers_breweries %>% select(Style,IBU) %>%
   summarize_all(~ sum(is.na(.))) %>%
   arrange(desc(IBU)) %>%
   print(n = 10)
+
+# Removing the remaining missing values 
+beers_breweries <- beers_breweries %>% drop_na(ABV, IBU)
 ```
 There are still 52 missing IBU values after imputing the mean IBU value for the style of beer. These beers are styles that do not commonly have IBU measured, and so there is no mean to impute. As shown in the table of remaining missing values per style, these beers are largely styles that are irrelevant to our analysis. We will leave the values as missing and they will be excluded in any further analysis.
 
@@ -240,7 +243,7 @@ beers_medians <-
     beers_breweries %>%
     group_by(State) %>%
     summarize(median_ABV = median(ABV, na.rm = TRUE), 
-              median_IBU = median(IBU, na.rm = TRUE)) %>%
+              median_IBU = median(IBU, na.rm = TRUE), count = n()) %>%
     arrange(desc(median_ABV))
 
 ## Plot Median values by state
@@ -250,6 +253,7 @@ beers_medians %>%
     labs(x = "State", y = "Median Alcohol Content (ABV)", title = "Median Alcohol Content in Each State") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 70, hjust = 0))
+
 beers_medians %>%
     ggplot(aes(x = State, y = median_IBU)) +
     geom_bar(stat = "identity", fill = "#d05e5e") +
@@ -271,12 +275,12 @@ beers_medians <- left_join(beers_medians, state_fips, by = c("State"= "abbr"))
 plot_usmap(data = beers_medians, values = "median_ABV") + 
   labs(title = "Heat Map of Median Alcohol by Volume (ABV) for Each State") + 
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
-  scale_fill_gradient('ABV',  low = "grey", high = "Red")
+  scale_fill_gradient('ABV',  low = "White", high = "Red")
 
 plot_usmap(data = beers_medians, values = "median_IBU") + 
   labs(title = "Heat Map of Median Bitterness in Each State") + 
   theme(plot.title = element_text(hjust = 0.5), legend.position = "right") +
-  scale_fill_gradient('IBU',  low = "grey", high = "Blue")
+  scale_fill_gradient('IBU',  low = "grey", high = "Yellow")
 ```
 
 There doesn't seem to be excessive variation in median IBU or ABV across states. The notable exception to this is the much lower median ABV for Utah, which may be an artifact of the state laws. ABV of all beer sold in Utah was previously limited to 3.2%. That law has been repealed and one of the authors, who lives in Utah, can confirm that the beer situation is slowly improving.
@@ -310,13 +314,15 @@ beers_breweries %>%
     max = max(ABV, na.rm = TRUE)
   )
 
-beers_breweries %>%  
+beers_breweries %>% 
   ggplot(aes(x = ABV, fill = "ABV")) + 
-  geom_histogram(show.legend = FALSE) +
+  geom_histogram(show.legend = FALSE, bins=30) + geom_density() + 
   labs(x = "Alcohol Content (ABV)", y = "Count", 
        title = "Alcohol by Volume Historgram") +
   theme_gdocs()
- #describe(beers_breweries$ABV)
+
+library(psych)
+describe(beers_breweries$ABV)
 ```
 The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This is notable for being much higher than anything Budweiser is currently producing. There may be room for product line expansion in this direction based on market preferences.
 
@@ -326,7 +332,7 @@ The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This i
 beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = TRUE), "IPA",
                         ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other"))
 
-beers_breweries %>%
+beers_breweries %>% 
   ggplot(aes(x = ABV, y = IBU, color = Ale)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
@@ -334,7 +340,7 @@ beers_breweries %>%
     y = "Bitterness (IBU)",
     title = "Alcohol Content vs. Bitterness") +
   scale_x_continuous(labels = scales::percent) +
-  theme_gdocs()
+  theme_economist()
 
 ```
  
@@ -401,7 +407,7 @@ lsd_abv$means[1:2, ] %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_gdocs()
+  theme_clean()
 ```
 
 We can see that the mean ABV of IPA's is significantly higher than the mean ABV of Ales. The error bars indicate that we can be 95% confident that their ranges are not even close to overlapping. In fact, the p-value that the difference in their mean ABV values is 0 is 2.2e-16, which is extremely small. This is one reason the KNN model is so effective.
@@ -425,7 +431,7 @@ lsd_ibu$means[1:2, ] %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_gdocs()
+  theme_clean()
 ```
 
 Again, we can see that their likely ranges of mean values are not even close to overlapping. The p-value that their difference in mean IBU value is 0 is small enough to be effectively zero. This is further reason to expect the KNN model to be effective.
@@ -502,7 +508,7 @@ lsd_abv$means %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_gdocs()
+  theme_clean()
 ```
 
 We can see that, while some categories have overlapping confidence intervals, most are different. The only categories that do not have a significant difference in their mean ABV values (p > 0.05 including Bonferroni adjustment for post-hoc comparisons) are Ale and Other, IPA and Stout, Lager and Pilsner, and Other and Porter.
@@ -538,7 +544,7 @@ lsd_ibu$means %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_gdocs()
+  theme_clean()
 ```
 
 Here, there is some overlap, but also significant differences. The only pairings that do not have statistically significant differences of means are: Ales, Porters, and Pilsners, as well as the difference between Lager and Other. 
