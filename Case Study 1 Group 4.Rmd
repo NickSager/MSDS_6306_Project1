@@ -1,7 +1,7 @@
 ---
 title: "Case Study 1 - Beers"
 author: "Nicholas Sager & Steven Cox"
-date: "2/17/2023"
+date: "2/25/2023"
 output: html_document
 ---
 
@@ -23,7 +23,7 @@ library(usmapdata)
 
 ## Introduction
 
-This case study is conducted to analyze data on a wide variety of American beers for Budweiser. It is our intention that the results provide an overall picture of the domestic beer market and help inform Budweiser's efforts in their future beer endeavors. The data set contains information on 2410 different beers from 558 different breweries in 50 different states.  It also contains information on the name of the beer, the name of the brewery, the state where the brewery is located, the alcohol by volume (ABV) of the beer, the International Bitterness Units (IBU) of the beer, and the syle of the beer. We will predominately be focusing on the ABV and IBU of the beer, as well as the style of the beer.
+This case study is conducted to analyze data on a wide variety of American beers for Budweiser. It is our intention that the results provide an overall picture of the domestic beer market and help inform Budweiser's efforts in their future beer endeavors. The data set contains information on 2410 different beers from 558 different breweries in 50 different states.  It also contains information on the name of the beer, the name of the brewery, the state where the brewery is located, the alcohol by volume (ABV) of the beer, the International Bitterness Units (IBU) of the beer, and the style of the beer. We will predominately be focusing on the ABV and IBU of the beer, as well as the style of the beer.
 
 ## Read the Data
 
@@ -151,7 +151,7 @@ tail(beers_breweries, 6)
 
 ### 3. Address the missing values in each column.
 
-There are some missing data in the beers dataset. We will need to address these before we can do any analysis. 
+There are some missing data in the beers dataset. We will need to address these before we can do any analysis. Each variable has the following number of missing values:
 ```{r}
 #Investigate the missing values
 sapply(beers_breweries, function(x) sum(is.na(x)))
@@ -187,7 +187,7 @@ beers_breweries <- beers_breweries[beers_breweries$Beer_ID != 1796,]
 sapply(beers_breweries, function(x) sum(is.na(x)))
 ```
 
-The remaining missing values will be imputed using the mean ABV and IBU values for the style of beer. IBU values appear to be missing at random. The amount differs by style of beer, but we have no reason to believe it differs base on the actual value of IBU. American IPA's have the highest number of missing IBU values but, as we will see later, the have a unique range of IBU values, so the imputation should be accurate. The same applies to the other Ales that make up the bulk of the missing data, and imputation is appropriate in general because the data appears missing at random. Because our analysis is concerned with Ales, more effort could be put into finding these missing values if more time or money becomes available and a more accurate analysis is desired.
+The remaining missing values will be imputed using the mean IBU values for the style of beer. IBU values appear to be missing at random. The amount differs by style of beer, but we have no reason to believe it differs base on the actual value of IBU. American IPA's have the highest number of missing IBU values but, as we will see later, the have a unique range of IBU values, so the imputation should be accurate. The same applies to the other Ales that make up the bulk of the missing data, and imputation is appropriate in general because the data appears missing at random. Because our analysis is concerned with Ales, more effort could be put into finding these missing values if more time or money becomes available and a more accurate analysis is desired.
 ```{r}
 # Missing IBU values grouped by style of beer
 beers_breweries %>% 
@@ -222,8 +222,9 @@ beers_breweries %>% select(Style,IBU) %>%
   arrange(desc(IBU)) %>%
   print(n = 10)
 ```
+There are still 52 missing IBU values after imputing the mean IBU value for the style of beer. These beers are styles that do not commonly have IBU measured, and so there is no mean to impute. As shown in the table of remaining missing values per style, these beers are largely styles that are irrelevant to our analysis. We will leave the values as missing and they will be excluded in any further analysis.
 
-Lastly, five beers do not have a style. Because this is such a small number of beers, we will change them to "Other" to make the analysis easier.
+Lastly, three beers do not have a style. Because this is such a small number of beers, we will change them to "Other" to make the analysis easier.
 ```{r}
 # Some Beers don't have a style, so we will change them to "Other"
 beers_breweries %>% filter(Style == "")
@@ -289,7 +290,7 @@ beers_breweries %>%
     filter(IBU == max(beers_breweries$IBU, na.rm = TRUE)) %>%
     select(State, Beer_Name, IBU, Brewery, Style)
 ```
-The most alcoholic beer in the dataset is from Colorado. It is a Belgian Quadrupel and has 12.8%. The most bitter beer is called "Bitter Bitch Imperial IPA", which is from Oregon and has 138 IBU.
+The most alcoholic beer in the dataset is from Colorado. It is a Belgian Quadrupel and has 12.8% ABV. The most bitter beer is called "Bitter Bitch Imperial IPA", which is from Oregon and has 138 IBU.
 
 ### 6. Comment on the summary statistics and distribution of the ABV variable.
 ```{r warning=FALSE, message=FALSE}
@@ -323,22 +324,26 @@ beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = 
                         ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other"))
 
 beers_breweries %>%
-    ggplot(aes(x = ABV, y = IBU, color = Ale)) + 
-    geom_point() +
-    geom_smooth(method = "lm", se = FALSE, color = "black") +
-    labs(x = "Alcohol Content (ABV)", y = "Bitterness (IBU)", title = "Alcohol Content vs. Bitterness") + scale_x_continuous(labels = scales::percent) + theme_gdocs()
+  ggplot(aes(x = ABV, y = IBU, color = Ale)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(x = "Alcohol Content (ABV)",
+    y = "Bitterness (IBU)",
+    title = "Alcohol Content vs. Bitterness") +
+  scale_x_continuous(labels = scales::percent) +
+  theme_gdocs()
 
 ```
  
- There appears to be a linear relationship between alcohol content (ABV) and bitterness (IBU), meaning that bitterness measured by IBU increases with alcohol content (ABV). The black line on the plot is a simple linear regression which attempts to estimate this relationship. The upward slope depicts that the relationship is positive. Note that the gold colored dots above the line are mostly Ales, meaning that they have higher bitterness compared to their ABV. The blue and pink dots below the line are mostly lagers, pilsners, and other light beers. These tend to be less bitter for a given ABV.
+ There appears to be a linear relationship between alcohol content (ABV) and bitterness (IBU), meaning that bitterness measured by IBU increases with alcohol content (ABV). The black line on the plot is a simple linear regression which attempts to estimate this relationship. The upward slope depicts that the relationship is positive. Note that the green colored dots above the line are IPAs, meaning that they have higher bitterness compared to their ABV. The blue dots below the line are mostly lagers, pilsners, and other light beers. These tend to be less bitter for a given ABV. The red dots are Ales, which tend to fall in between IPAs and the Other beers and roughly follow the regression line.
 
 ## Modelling
 
-### 8. Ales vs. IPAs
+### 8. Ales vs. IPAs [REWRITE]
 Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA).  You decide to use KNN classification to investigate this relationship.  Provide statistical evidence one way or the other. You can of course assume your audience is comfortable with percentages … KNN is very easy to understand conceptually. 
 In addition, while you have decided to use KNN to investigate this relationship (KNN is required) you may also feel free to supplement your response to this question with any other methods or techniques you have learned.  Creativity and alternative solutions are always encouraged. 
 ```{r}
-
+set.seed(137)
 # Use string methods to make an indicator of whether the beer is an IPA or an Ale (Response variable)
 beers_breweries$Ale <- ifelse(grepl("IPA", beers_breweries$Style, ignore.case = TRUE), "IPA",
                         ifelse(grepl("\\bAle\\b", beers_breweries$Style, ignore.case = TRUE), "Ale", "Other"))
@@ -356,9 +361,9 @@ confusionMatrix(table(classifications, na.omit(beers_breweries)$Ale))
 classifications = knn.cv(na.omit(ales)[, c("ABV", "IBU")], na.omit(ales)$Ale, k = 5)
 confusionMatrix(table(classifications, na.omit(ales)$Ale))
 ```
-The KNN model using only Ales (IPAs and other Ales) has more than a 86% accuracy rate. For identifying an Ale, the sensitivity of the model is 88.5% and the specificity is 82.9%. Practically, this means that ABV and IBU can determine whether a given Ale is an IPA or not almost all of the time. 
+The KNN model using only Ales (IPAs and other Ales) has more than a 91% accuracy rate. For identifying an Ale, the sensitivity of the model is 92.8% and the specificity is 88.3%. Practically, this means that ABV and IBU can determine whether a given Ale is an IPA or not almost all of the time. 
 
-Furthermore, the KNN model using the entire dataset of beers has a 68% accuracy rate. The whole dataset includes many other types of beers but the model still performs quite well. This suggests that both ales and IPAs have a distinct profile of alcohol content and bitterness compared to any other type of beer. 
+Furthermore, the KNN model using the entire dataset of beers has a 74% accuracy rate. The whole dataset includes many other types of beers but the model still performs quite well. This suggests that both ales and IPAs have a distinct profile of alcohol content and bitterness compared to any other type of beer. 
 
 The following chart shows the difference of ABV and IBU between IPAs and Ales. IPAs tend to have distinctly higher ABV and IBU than Ales, which explains the unusually high accuracy of the KNN model. 
 ```{r warning=FALSE, message=FALSE}
@@ -370,10 +375,9 @@ The following chart shows the difference of ABV and IBU between IPAs and Ales. I
     theme_gdocs()
 ```
 
-To further test the difference between Ales and IPA's , we can conduct a two sample t-test on the difference of their IBU and ABV values. This powerful statistical method will test whether the difference between the means of the two groups is statistically significant, based on how their values are distributed. The following chart shows the average ABV and the 95% confidence interval for each beer style. The confidence interval is the range of values that we can be 95% confident that the true mean lies within.  
+To further test the difference between Ales and IPA's , we can conduct a two sample t-test on the difference of their IBU and ABV values. This powerful statistical method will test whether the difference between the means of the two groups is statistically significant, based on how their values are distributed. The following chart shows the average ABV and the 95% confidence interval for the mean value of each beer style. The confidence interval is the range of values that we can be 95% confident that the true mean lies within.  
 ```{r}
 library(agricolae)
-
 fit = lm(ABV ~ Ale, data = beers_breweries)
 #anova(fit)
 
@@ -394,7 +398,7 @@ lsd_abv$means[1:2, ] %>%
   theme_gdocs()
 ```
 
-We can see that the mean ABV of IPA's is significantly higher than the mean ABV of Ales. The error bars indicate that we can be 95% confident that their ranges are not even close to overlapping. In fact, the p-value that their difference in ABV value is 0 is 2.2e-16, which is extremely small. This is one reason the KNN model is so effective.
+We can see that the mean ABV of IPA's is significantly higher than the mean ABV of Ales. The error bars indicate that we can be 95% confident that their ranges are not even close to overlapping. In fact, the p-value that the difference in their mean ABV values is 0 is 2.2e-16, which is extremely small. This is one reason the KNN model is so effective.
 
 Here is a chart showing the average IBU and the 95% confidence interval for each beer style:
 ```{r}
@@ -418,12 +422,12 @@ lsd_ibu$means[1:2, ] %>%
   theme_gdocs()
 ```
 
-Again, we can see that their ranges are not even close to overlapping. The p-value that their difference in IBU value is 0 is small enough to be effectively zero. This is further reason to expect the KNN model to be effective.
+Again, we can see that their likely ranges of mean values are not even close to overlapping. The p-value that their difference in mean IBU value is 0 is small enough to be effectively zero. This is further reason to expect the KNN model to be effective.
 
 
 ### 9. Broadening our analysis to include other styles of beer
 
-Since the analysis of Ales vs IPAs, was so effective, we may as well use the same method to investigate the difference between other styles of beer. This may be useful for Budweiser to determine what specific profiles of ABV and IBU are associated with each style of beer. This could help with positioning their beers relative to the existing markets.
+Since the analysis of Ales vs IPAs, was so effective, we may as well use the same method to investigate the difference between other styles of beer. This may be useful for Budweiser to determine what specific profiles of ABV and IBU are associated with each style of beer. Such information could help with positioning their beers relative to the existing markets.
 
 First, we will further filter data into categories of common beer styles and check what is left over:
 ```{r}
@@ -460,12 +464,24 @@ beers_breweries %>%
   theme_gdocs()
 ```
 
-Next, we will use the same statistical methods as above to investigate the ABV and IBU values of each category of beer:
+Next, we will use the same statistical methods as above to investigate the ABV and IBU values of each category of beer. This chart shows the distributions of ABV for each category of beer:
+```{r}
+# Plot a boxplot of ABV by beer style
+beers_breweries %>%
+  ggplot(aes(x = Category, y = ABV, fill = Category)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Distribution of ABV by Beer Style", x = NULL, y = "ABV") +
+  theme_gdocs()
+```
+They appear to fall into distinct ranges, but we can use the t.test to determine if they are significantly different from each other.
+
+The following chart shows the mean value of each category of beer and the 95% confidence interval for their mean values obtained from pairwise t-tests:
 ```{r}
 fit = lm(ABV ~ Category, data = beers_breweries)
 #anova(fit)
 
-lsd_abv = LSD.test(fit, "Category", p.adj = "none", group = FALSE)
+lsd_abv = LSD.test(fit, "Category", p.adj = "bonferroni", group = FALSE)
 
 lsd_abv$means %>%
   ggplot(aes(x = rownames(.), y = ABV, color = rownames(.))) +
@@ -482,14 +498,26 @@ lsd_abv$means %>%
   theme_gdocs()
 ```
 
-We can see that, while some categories have overlapping confidence intervals, most are different. 
+We can see that, while some categories have overlapping confidence intervals, most are different. The only categories that do not have a significant difference in their mean ABV values (p > 0.05 including Bonferroni adjustment for post-hoc comparisons) are Ale and Other, IPA and Stout, Lager and Pilsner, and Other and Porter.
 
-Here is the same analysis for the IBUs:
+Here is the distribution by category for the IBUs:
 ```{r}
+# Plot a boxplot of ibu by beer style
+beers_breweries %>%
+  ggplot(aes(x = Category, y = IBU, fill = Category)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "IBU by Beer Style", x = NULL, y = "IBU") +
+  theme_gdocs()
+```
+
+Again, we can see that they fall into distinct ranges, but we can use the t.test to determine if they are significantly different from each other:
+```{r}
+
 fit = lm(IBU ~ Category, data = beers_breweries)
 #anova(fit)
 
-lsd_ibu = LSD.test(fit, "Category", p.adj = "none", group = FALSE)
+lsd_ibu = LSD.test(fit, "Category", p.adj = "bonferroni", group = FALSE)
 
 lsd_ibu$means %>%
   ggplot(aes(x = rownames(.), y = IBU, color = rownames(.))) +
@@ -506,17 +534,19 @@ lsd_ibu$means %>%
   theme_gdocs()
 ```
 
-Here, there is also some overlap, but also significant differences. We can expect that a KNN model built on these categories will be effective, if less so than the one that categorizes Ales and IPAs.
+Here, there is some overlap, but also significant differences. The only pairings that do not have statistically significant differences of means are: Ales, Porters, and Pilsners, as well as the difference between Lager and Other. 
 
 ### 10. Building a KNN model to predict beer style
 
+Because the categories have distinct ranges for ABV and IBU, we can expect that a KNN model built on these categories will be effective, if less so than the one that categorizes Ales and IPAs. As a reminder, KNN classifies beers based on the closest beers to a given ABV and IBU value based on the beers dataset. Here are the results of the KNN model classifying based on the seven categories we've identified:
 ```{r}
+set.seed(137)
 # Use KNN to classify the beers into broad categories using ABV and IBU as the predictors
 # The entire dataset is used to train the model, including "Other" beers
 classifications = knn.cv(na.omit(beers_breweries)[, c("ABV", "IBU")], na.omit(beers_breweries)$Category, k = 5)
 confusionMatrix(table(classifications, na.omit(beers_breweries)$Category))
 ```
 
-The model does pretty well. Overall accuracy is 0.71, meaning that it correctly classifies 71% beers. Considering that there are 5 categories, this is a very usable result. The model also remains very accurate (~84% balanced accuracy) at classifying Ales and IPAs, which is the most important category for Budweiser. The authors expect this ability to either classify or reject a beer as an IPA or an Ale (or any other style) to be very useful for Budweiser when evaluating new products.
+The model does pretty well. Overall accuracy is 0.71, meaning that it correctly classifies 71% beers. Considering that there are 7 categories, this is a very usable result. The model also remains very accurate (~84% balanced accuracy) at classifying Ales and IPAs, which is the most important category for Budweiser. The authors expect this ability to either classify or reject a beer as an IPA or an Ale (or any other style) to be very useful for Budweiser when evaluating new products.
 
 ## Conclusion
