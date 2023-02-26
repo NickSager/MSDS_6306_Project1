@@ -114,7 +114,8 @@ Brewery_Stat = beers_breweries %>%
 ggplot(Brewery_Stat, aes(x = reorder(State, -count), y = count)) +
     geom_bar(stat = "identity", fill = "red") +
     labs(x = "State", y = "Number of Breweries", title = "Number of Breweries in Each State") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    geom_text(aes(label = count), vjust = 0, size = 2)
 
 ```
 
@@ -407,7 +408,7 @@ lsd_abv$means[1:2, ] %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_clean()
+  theme_gdocs()
 ```
 
 We can see that the mean ABV of IPA's is significantly higher than the mean ABV of Ales. The error bars indicate that we can be 95% confident that their ranges are not even close to overlapping. In fact, the p-value that the difference in their mean ABV values is 0 is 2.2e-16, which is extremely small. This is one reason the KNN model is so effective.
@@ -431,7 +432,7 @@ lsd_ibu$means[1:2, ] %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_clean()
+  theme_gdocs()
 ```
 
 Again, we can see that their likely ranges of mean values are not even close to overlapping. The p-value that their difference in mean IBU value is 0 is small enough to be effectively zero. This is further reason to expect the KNN model to be effective.
@@ -508,7 +509,7 @@ lsd_abv$means %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_clean()
+  theme_gdocs()
 ```
 
 We can see that, while some categories have overlapping confidence intervals, most are different. The only categories that do not have a significant difference in their mean ABV values (p > 0.05 including Bonferroni adjustment for post-hoc comparisons) are Ale and Other, IPA and Stout, Lager and Pilsner, and Other and Porter.
@@ -544,7 +545,7 @@ lsd_ibu$means %>%
     y = "Estimate",
     color = "Style"
   ) +
-  theme_clean()
+  theme_gdocs()
 ```
 
 Here, there is some overlap, but also significant differences. The only pairings that do not have statistically significant differences of means are: Ales, Porters, and Pilsners, as well as the difference between Lager and Other. 
@@ -583,7 +584,6 @@ budweiser_top <- data.frame(
 beers_breweries %>%
   ggplot(aes(x = ABV, y = IBU, color = Category)) +
   geom_point() +
-  geom_point(data = budweiser_top, aes(x = ABV, y = IBU), color = "#4a06e9", size = 6, shape = 17) +
   labs(
     title = "ABV and IBU by Beer Style",
     subtitle = "With Budweiser's Top Offerings",
