@@ -342,7 +342,7 @@ beers_breweries %>%
     y = "Bitterness (IBU)",
     title = "Alcohol Content vs. Bitterness") +
   scale_x_continuous(labels = scales::percent) +
-  theme_economist()
+  theme_gdocs()
 
 ```
  
