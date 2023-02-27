@@ -353,9 +353,9 @@ beers_breweries %>%
 ## Modelling
 
 ### 8. Ales vs. IPAs
-Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA). To do so, we will use two strategies. First we will use a simple machine learning model called a KNN (K-Nearest Neighbors) model to predict whether beers in the dataset are Ales or IPAs. The KNN model will look at the nearest beers to the ABV and IBU in question, and classify the beer as an IPA or an Ale based on the majority of the surrounding beers. High accuracy in this model would indicate that there is a clear difference between IPAs and Ales. 
+Budweiser would also like to investigate the difference with respect to IBU and ABV between IPAs (India Pale Ales) and other types of Ale (any beer with “Ale” in its name other than IPA). To do so, we will use two strategies. First, we will use a simple machine learning model called a KNN (K-Nearest Neighbors) model to predict whether beers in the dataset are Ales or IPAs. The KNN model will look at the nearest beers to the ABV and IBU in question and classify the beer as an IPA or an Ale based on the majority of the surrounding beers. High accuracy in this model would indicate that there is a clear difference between IPAs and Ales. 
 
-Next we will use a statistical tool called a t-test to compare the ABV and IBU of IPAs and Ales. This is a more rigorous test that will evaluate whether the difference in ABV and IBU between the two beer Styles is statistically significant.
+Next, we will use a statistical tool called a t-test to compare the ABV and IBU of IPAs and Ales. This is a more rigorous test that will evaluate whether the difference in ABV and IBU between the two beer Styles is statistically significant.
 
 Here are the results of the KNN model:
 ```{r}
@@ -576,7 +576,8 @@ budweiser_top <- data.frame(
     "Budweiser Black Crown Lager",
     "Budweiser Copper Lager",
     "Budweiser Freedom Reserve Red Lager",
-    "Budweiser Chelada", "Bud Ice Lager",
+    "Budweiser Chelada", 
+    "Bud Ice Lager",
     "Bud Light Lime Lager",
     "Bud Light Platinum Lager"),
   ABV = c(.05, .042, .043, .060, .062, .054, .042, .055, .042, .060),
