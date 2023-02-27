@@ -114,11 +114,9 @@ Brewery_Stat = beers_breweries %>%
 ggplot(Brewery_Stat, aes(x = reorder(State, -count), y = count)) +
   geom_bar(stat = "identity", fill = "red") +
   labs(x = "State", y = "Number of Breweries", title = "Number of Breweries in Each State") +
+  theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  geom_text(aes(label = count), vjust = 0, size = 2) +
-  theme_gdocs()
-  
-
+  geom_text(aes(label = count), vjust = 0, size = 2.5)
 ```
 
 Here is a heat map of the amount of breweries per state.
@@ -194,7 +192,7 @@ sapply(beers_breweries, function(x) sum(is.na(x)))
 ```
 
 The remaining missing values will be imputed using the mean IBU values for the style of beer. IBU values appear to be missing at random. The amount differs by style of beer, but we have no reason to believe it differs base on the actual value of IBU. American IPA's have the highest number of missing IBU values but, as we will see later, the have a unique range of IBU values, so the imputation should be accurate. The same applies to the other Ales that make up the bulk of the missing data, and imputation is appropriate in general because the data appears missing at random. Because our analysis is concerned with Ales, more effort could be put into finding these missing values if more time or money becomes available and a more accurate analysis is desired.
-```{r}
+```{r, out.width="130%"}
 # Missing IBU values grouped by style of beer
 beers_breweries %>% 
   group_by(Style) %>%
@@ -211,8 +209,8 @@ beers_breweries %>%
     geom_bar(stat = "identity", fill = "blue") +
     labs(x = "Style of Beer", y = "Number of Missing IBU Values", 
          title = "Number of Missing IBU Values by Style") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  
+    theme_minimal() +
+    theme(axis.text.x = element_text(size = rel(0.75), angle = 90, hjust = 1))
 
 #Impute the values for the missing IBU values with the mean IBU value for the style of beer
 beers_breweries <- beers_breweries %>%
@@ -325,8 +323,8 @@ beers_breweries %>%
        title = "Alcohol by Volume Historgram") +
   theme_gdocs()
 
-library(psych)
-describe(beers_breweries$ABV)
+# library(psych)
+# describe(beers_breweries$ABV)
 ```
 The mean ABV for beers in this data set is 5.97%, and the median is 5.6%. This is notable for being much higher than anything Budweiser is currently producing. There may be room for product line expansion in this direction based on market preferences.
 
