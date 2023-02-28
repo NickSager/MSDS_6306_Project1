@@ -320,7 +320,7 @@ beers_breweries %>%
   ggplot(aes(x = ABV, fill = "ABV")) + 
   geom_histogram(show.legend = FALSE, bins=30) + geom_density() + 
   labs(x = "Alcohol Content (ABV)", y = "Count", 
-       title = "Alcohol by Volume Historgram") +
+       title = "Alcohol by Volume Histogram") +
   theme_gdocs()
 
 # library(psych)
