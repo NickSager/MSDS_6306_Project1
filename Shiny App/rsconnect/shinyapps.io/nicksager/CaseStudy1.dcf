@@ -1,0 +1,13 @@
+name: CaseStudy1
+title: CaseStudy1
+username:
+account: nicksager
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8629599
+bundleId: 6987686
+url: https://nicksager.shinyapps.io/CaseStudy1/
+when: 1679412399.06906
+lastSyncTime: 1679412399.06907
+asMultiple: FALSE
+asStatic: FALSE

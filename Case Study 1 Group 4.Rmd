@@ -25,6 +25,8 @@ library(usmapdata)
 
 This case study is conducted to analyze data on a wide variety of American beers for Budweiser. It is our intention that the results provide an overall picture of the domestic beer market and help inform Budweiser's efforts in their future beer endeavors. The data set contains information on 2410 different beers from 558 different breweries in 50 different states.  It also contains information on the name of the beer, the name of the brewery, the state where the brewery is located, the alcohol by volume (ABV) of the beer, the International Bitterness Units (IBU) of the beer, and the style of the beer. We will predominately be focusing on the ABV and IBU of the beer, as well as the style of the beer.
 
+For an interactive app to visualize this data, please see: [Shiny App](https://nicksager.shinyapps.io/CaseStudy1/)
+
 ## Read the Data
 
 First, we will read in the beers data, and merge the breweries data so that each beer has brewery data associated with it. Then we will view a few row to make sure it looks ok. 
@@ -607,3 +609,8 @@ This analysis has answered the initial questions posed by Budweiser's request, a
 
 Nicholas Sager: nsager@smu.edu  
 Steven Cox: sacox@mail.smu.edu
+
+```{r output, include=FALSE, echo=FALSE}
+# Write beers_breweries to a csv for later use
+write_csv(beers_breweries, "Data/beers_breweries.csv")
+```
