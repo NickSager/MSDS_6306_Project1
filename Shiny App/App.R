@@ -41,7 +41,7 @@ ui <- fluidPage(
       br(),
       
       # Input: Slider for the number of observations to generate ----
-      textInput("state", "Filter by State (e.g., UT)"),
+      textInput("state", label = "Filter by State (e.g., UT)"),
 
       #Input: Slider for the number of bins ----
       sliderInput(inputId = "bins",
@@ -56,8 +56,8 @@ ui <- fluidPage(
 
       # Output: Tabset w/ plot, summary, and table ----
       tabsetPanel(type = "tabs",
-                  tabPanel("Individual Distribution", plotOutput("plot")),
-                  tabPanel("Scatter Plot", plotOutput("scatter"))
+                  tabPanel("Scatter Plot", plotOutput("scatter")),
+                  tabPanel("Individual Distribution", plotOutput("plot"))
       )
 
     )
@@ -69,13 +69,14 @@ server <- function(input, output) {
   # Reactive expression to generate the requested filter ----
   # This is called whenever the inputs change. The output functions
   # defined below then use the value computed from this expression
-  beers <- reactive({
-      ifelse(nchar(input$state == 0),
-          beers_breweries,
-          beers_breweries %>% filter(state == input$state)
-      )
-  })
-#   beers <- beers_breweries
+  # reactive({
+  #   if (nchar(input$state) == 0) {
+  #     beers <- beers_breweries
+  #   } else {
+  #     beers <- beers_breweries %>% filter(State == input$state)
+  #   }
+  # })
+  # NOT WORKING outside of renderPlot calls
 
   # Generate a plot of the data ----
   # Also uses the inputs to build the plot label. Note that the
@@ -83,23 +84,27 @@ server <- function(input, output) {
   # both tracked, and all expressions are called in the sequence
   # implied by the dependency graph.
   output$plot <- renderPlot({
+    if (nchar(input$state) == 0) {
+      beers <- beers_breweries
+    } else {
+      beers <- beers_breweries %>% filter(State == input$state)
+    }
+    print(str(beers))
     if(input$plot == "geom_histogram") {
-      metric <- input$metric
       beers %>%
-        ggplot(aes(x = metric)) +
+        ggplot(aes(x = !!sym(input$metric))) +
         geom_histogram(bins = input$bins) +
         labs(
-            title = paste("Distribution of ", metric, sep = ""),
+            title = paste("Distribution of ", input$metric, sep = ""),
             x = "ABV",
             y = "Count"
         )
     } else {
-      metric <- input$metric
       beers %>%
-        ggplot(aes(x = metric)) +
+        ggplot(aes(x = !!sym(input$metric))) +
         geom_boxplot()+
         labs(
-            title = paste("Distribution of ", metric, sep = ""),
+            title = paste("Distribution of ", input$metric, sep = ""),
             x = "ABV",
             y = "Count"
         )
@@ -108,15 +113,21 @@ server <- function(input, output) {
 
   # Generate a scatterplot of ABV vs IBU ----
   output$scatter <- renderPlot({
-    if(input$lm == TRUE) {
+    if (nchar(input$state) == 0) {
+      beers <- beers_breweries
+    } else {
+      beers <- beers_breweries %>% filter(State == input$state)
+    }
+
+    if (input$lm == TRUE) {
       beers %>%
         ggplot(aes(x = ABV, y = IBU, color = Ale)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE, color = "black") +
         labs(
-            x = "Alcohol Content (ABV)",
-            y = "Bitterness (IBU)",
-            title = "Alcohol Content vs. Bitterness"
+          x = "Alcohol Content (ABV)",
+          y = "Bitterness (IBU)",
+          title = "Alcohol Content vs. Bitterness"
         ) +
         scale_x_continuous(labels = scales::percent) +
         theme_minimal()
@@ -125,24 +136,13 @@ server <- function(input, output) {
         ggplot(aes(x = ABV, y = IBU, color = Ale)) +
         geom_point() +
         labs(
-            x = "Alcohol Content (ABV)",
-            y = "Bitterness (IBU)",
-            title = "Alcohol Content vs. Bitterness"
+          x = "Alcohol Content (ABV)",
+          y = "Bitterness (IBU)",
+          title = "Alcohol Content vs. Bitterness"
         ) +
         scale_x_continuous(labels = scales::percent) +
         theme_minimal()
     }
-    # beers %>%
-    #     ggplot(aes(x = ABV, y = IBU, color = Ale)) +
-    #     geom_point() +
-    #     geom_smooth(method = "lm", se = FALSE, color = "black") +
-    #     labs(
-    #         x = "Alcohol Content (ABV)",
-    #         y = "Bitterness (IBU)",
-    #         title = "Alcohol Content vs. Bitterness"
-    #     ) +
-    #     scale_x_continuous(labels = scales::percent) +
-    #     theme_minimal()
   })
 }
 
